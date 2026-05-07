@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0d2b">
+<title>Pokemon Battle ⚔️</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --yellow: #FFD700;
+  --red: #E3350D;
+  --blue: #2A75BB;
+  --hp-green: #48D035;
+  --hp-yellow: #F8D030;
+  --hp-red: #F03030;
+  --panel-bg: #EDE8C8;
+  --panel-border: #8b7355;
+  --text-dark: #1e1e1e;
+  --field-h: 52vh;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Press Start 2P', monospace;
+  background: #0d0d2b;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== SCREENS ===== */
+.screen { display:none; flex-direction:column; width:100%; height:100%; position:absolute; top:0; left:0; }
+.screen.active { display:flex; }
+
+/* ===== SELECT SCREEN ===== */
+#select-screen {
+  background: linear-gradient(180deg,#0d0d2b 0%,#1a1a4e 50%,#0d0d2b 100%);
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(var(--sat) + 20px) 16px calc(var(--sab) + 20px);
+}
+
+.stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
+.star {
+  position:absolute; width:2px; height:2px;
+  background:#fff; border-radius:50%;
+  animation:twinkle var(--d,3s) var(--delay,0s) infinite alternate;
+}
+@keyframes twinkle { 0%{opacity:.15} 100%{opacity:1} }
+
+.select-logo { position:relative; z-index:1; text-align:center; margin-bottom:6px; margin-top:12px; }
+.select-logo .ico { font-size:48px; display:block; animation:spin 5s linear infinite; }
+@keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+
+.select-title {
+  position:relative; z-index:1;
+  font-size:clamp(13px,4vw,22px);
+  color:var(--yellow);
+  text-shadow:3px 3px 0 #8B6914,0 0 20px rgba(255,215,0,.5);
+  letter-spacing:2px;
+  animation:float 3s ease-in-out infinite;
+  text-align:center; margin-bottom:4px;
+}
+.select-sub { position:relative; z-index:1; font-size:clamp(7px,2.5vw,10px); color:#aaa; text-align:center; margin-bottom:20px; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+.pokemon-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  width:100%; max-width:480px;
+  position:relative; z-index:1;
+}
+@media(min-width:600px){ .pokemon-grid{ grid-template-columns:repeat(4,1fr); } }
+
+.pokemon-card {
+  background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04));
+  border:2px solid rgba(255,255,255,.15);
+  border-radius:14px;
+  padding:16px 10px 12px;
+  cursor:pointer;
+  text-align:center;
+  transition:transform .15s, box-shadow .15s, border-color .15s;
+  position:relative; overflow:hidden;
+  min-height:120px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  touch-action:manipulation;
+}
+.pokemon-card::after { content:''; position:absolute; inset:0; background:var(--c); opacity:0; transition:opacity .2s; border-radius:12px; }
+.pokemon-card.selected::after { opacity:.18; }
+.pokemon-card.selected { border-color:var(--c); box-shadow:0 0 0 3px var(--c); }
+.pokemon-card:active { transform:scale(.96); }
+
+.card-sprite { font-size:42px; display:block; margin-bottom:6px; position:relative; z-index:1; }
+.card-name   { font-size:8px; color:#fff; display:block; margin-bottom:3px; position:relative; z-index:1; line-height:1.4; }
+.card-type   { font-size:7px; color:var(--c); display:block; position:relative; z-index:1; }
+.card-stats  { font-size:6px; color:rgba(255,255,255,.5); margin-top:4px; position:relative; z-index:1; }
+
+.start-btn {
+  position:relative; z-index:1;
+  margin-top:20px;
+  width:100%; max-width:280px;
+  padding:16px;
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(10px,3vw,13px);
+  background:var(--yellow); color:#1a1a2e;
+  border:none; border-radius:8px;
+  cursor:pointer;
+  box-shadow:0 5px 0 #8B6914,0 0 20px rgba(255,215,0,.3);
+  transition:all .1s;
+  touch-action:manipulation;
+  min-height:52px;
+  animation:pulse-btn 2s ease-in-out infinite;
+}
+.start-btn:disabled { opacity:.35; animation:none; }
+.start-btn:active:not(:disabled) { transform:translateY(3px); box-shadow:0 2px 0 #8B6914; }
+@keyframes pulse-btn {
+  0%,100%{box-shadow:0 5px 0 #8B6914,0 0 16px rgba(255,215,0,.3)}
+  50%{box-shadow:0 5px 0 #8B6914,0 0 32px rgba(255,215,0,.6)}
+}
+
+/* ===== BATTLE SCREEN ===== */
+#battle-screen { background:#000; }
+
+.battle-field {
+  position:relative; overflow:hidden; flex-shrink:0;
+  height:var(--field-h);
+  background:linear-gradient(180deg,#5ab0e8 0%,#87CEEB 45%,#7BC67A 45%,#7BC67A 62%,#5a8f50 62%,#5a8f50 100%);
+}
+.battle-field::before {
+  content:''; position:absolute; bottom:38%; left:3%; width:42%; height:16%;
+  background:radial-gradient(ellipse,rgba(0,0,0,.18) 0%,transparent 70%); border-radius:50%;
+}
+.battle-field::after {
+  content:''; position:absolute; bottom:50%; right:3%; width:36%; height:14%;
+  background:radial-gradient(ellipse,rgba(0,0,0,.18) 0%,transparent 70%); border-radius:50%;
+}
+
+.cloud { position:absolute; background:rgba(255,255,255,.8); border-radius:50px; animation:drift var(--speed) linear infinite; }
+@keyframes drift { from{transform:translateX(-120%)} to{transform:translateX(110vw)} }
+
+.hp-panel {
+  position:absolute;
+  background:var(--panel-bg);
+  border:3px solid var(--panel-border);
+  border-radius:8px;
+  padding:8px 11px;
+  box-shadow:3px 3px 0 rgba(0,0,0,.3);
+  z-index:10;
+  min-width:clamp(140px,42vw,220px);
+}
+.hp-panel.enemy  { top:6%;   left:4%; }
+.hp-panel.player { bottom:36%; right:4%; }
+.hp-name { font-size:clamp(7px,2.2vw,10px); color:var(--text-dark); display:flex; align-items:center; gap:4px; margin-bottom:5px; }
+.hp-level { font-size:6px; color:#666; margin-left:auto; }
+.hp-track { height:9px; background:#555; border-radius:4px; overflow:hidden; border:2px solid #333; margin-bottom:3px; }
+.hp-bar { height:100%; border-radius:2px; transition:width .5s ease, background .5s; background:var(--hp-green); }
+.hp-numbers { font-size:clamp(6px,1.8vw,8px); color:var(--text-dark); text-align:right; }
+
+.pokemon-sprite {
+  position:absolute;
+  font-size:clamp(52px,13vw,90px);
+  line-height:1; user-select:none;
+  filter:drop-shadow(3px 6px 10px rgba(0,0,0,.4));
+  z-index:5;
+}
+.pokemon-sprite.enemy  { top:8%;    right:5%; transform:scaleX(-1); }
+.pokemon-sprite.player { bottom:34%; left:4%; }
+
+@keyframes shake       { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }
+@keyframes shake-enemy { 0%,100%{transform:scaleX(-1) translateX(0)} 20%{transform:scaleX(-1) translateX(-10px)} 40%{transform:scaleX(-1) translateX(10px)} 60%{transform:scaleX(-1) translateX(-8px)} 80%{transform:scaleX(-1) translateX(8px)} }
+@keyframes lunge       { 0%,100%{transform:translateX(0)} 50%{transform:translateX(50px)} }
+@keyframes lunge-enemy { 0%,100%{transform:scaleX(-1)} 50%{transform:scaleX(-1) translateX(-50px)} }
+@keyframes faint       { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(50px)} }
+@keyframes faint-enemy { 0%{opacity:1;transform:scaleX(-1) translateY(0)} 100%{opacity:0;transform:scaleX(-1) translateY(50px)} }
+
+.pokemon-sprite.enemy.shake   { animation:shake-enemy .4s; }
+.pokemon-sprite.player.shake  { animation:shake       .4s; }
+.pokemon-sprite.player.attack { animation:lunge       .35s ease-in-out; }
+.pokemon-sprite.enemy.attack  { animation:lunge-enemy .35s ease-in-out; }
+.pokemon-sprite.player.faint  { animation:faint       .6s forwards; }
+.pokemon-sprite.enemy.faint   { animation:faint-enemy .6s forwards; }
+
+.damage-popup {
+  position:absolute;
+  font-size:clamp(15px,4vw,22px);
+  pointer-events:none; z-index:100;
+  animation:popup 1.2s forwards;
+  font-family:'Press Start 2P',monospace;
+}
+.damage-popup.enemy-dmg { color:#FF3333; text-shadow:2px 2px 0 #800; right:12%; top:22%; }
+.damage-popup.player-dmg{ color:#FF3333; text-shadow:2px 2px 0 #800; left:12%;  bottom:50%; }
+@keyframes popup { 0%{opacity:1;transform:translateY(0) scale(1.2)} 70%{opacity:1;transform:translateY(-36px) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(.8)} }
+
+.skill-effect { position:absolute; inset:0; pointer-events:none; z-index:50; opacity:0; }
+.skill-effect.flash { animation:flash-a .3s; }
+@keyframes flash-a { 0%{opacity:0} 30%{opacity:.55} 100%{opacity:0} }
+
+.particle {
+  position:absolute; pointer-events:none; z-index:60;
+  font-size:clamp(14px,3vw,20px);
+  animation:p-fly var(--dur,.7s) var(--delay,0s) forwards;
+}
+@keyframes p-fly { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.3)} }
+
+/* ===== BATTLE UI ===== */
+.battle-ui {
+  flex:1;
+  display:flex; flex-direction:column;
+  background:var(--panel-bg);
+  border-top:4px solid var(--panel-border);
+  padding:8px 10px;
+  padding-bottom:calc(8px + var(--sab));
+  min-height:0; overflow:hidden;
+}
+
+.message-box {
+  background:#fff;
+  border:3px solid var(--panel-border);
+  border-radius:6px;
+  padding:9px 12px;
+  font-size:clamp(8px,2.2vw,10px);
+  color:var(--text-dark);
+  line-height:1.8;
+  min-height:44px;
+  flex-shrink:0;
+  margin-bottom:8px;
+  display:flex; align-items:center;
+}
+.msg-cursor {
+  display:inline-block; width:7px; height:7px;
+  background:var(--text-dark); margin-left:4px;
+  animation:blink .7s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.skills-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:7px;
+  flex:1; min-height:0;
+}
+
+.skill-btn {
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(7px,1.8vw,9px);
+  border:3px solid;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--panel-bg);
+  color:var(--text-dark);
+  text-align:left;
+  padding:10px;
+  display:flex; flex-direction:column; justify-content:center;
+  touch-action:manipulation;
+  min-height:52px;
+  transition:transform .08s;
+  position:relative; overflow:hidden;
+  -webkit-user-select:none;
+}
+.skill-btn:active:not(:disabled) { transform:scale(.95); }
+.skill-btn:disabled { opacity:.4; }
+.skill-btn .sn { display:block; margin-bottom:3px; }
+.skill-btn .sp { font-size:6px; color:#666; }
+.skill-btn::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,.25); opacity:0; transition:opacity .2s; }
+.skill-btn:active::after { opacity:1; }
+
+.type-electric { border-color:#F8D030; }
+.type-fire     { border-color:#F08030; }
+.type-water    { border-color:#6890F0; }
+.type-grass    { border-color:#78C850; }
+.type-normal   { border-color:#A8A878; }
+.type-psychic  { border-color:#F85888; }
+.type-ice      { border-color:#98D8D8; }
+.type-dragon   { border-color:#7038F8; }
+
+/* ===== RESULT OVERLAY ===== */
+.result-overlay {
+  position:absolute; inset:0;
+  background:rgba(0,0,0,.82);
+  display:none; flex-direction:column;
+  align-items:center; justify-content:center;
+  z-index:200;
+  backdrop-filter:blur(6px);
+  padding:24px 20px;
+}
+.result-overlay.show { display:flex; }
+
+.result-text {
+  font-size:clamp(22px,8vw,44px);
+  animation:rpop .5s cubic-bezier(.34,1.56,.64,1);
+  margin-bottom:12px; text-align:center;
+}
+.result-text.win  { color:var(--yellow); text-shadow:4px 4px 0 #8B6914,0 0 40px rgba(255,215,0,.8); }
+.result-text.lose { color:#E3350D;       text-shadow:4px 4px 0 #800,   0 0 40px rgba(200,0,0,.8); }
+@keyframes rpop { 0%{transform:scale(0) rotate(-10deg)} 100%{transform:scale(1) rotate(0)} }
+
+.result-sub { font-size:clamp(7px,2.2vw,10px); color:rgba(255,255,255,.7); margin-bottom:28px; text-align:center; line-height:1.9; }
+
+.result-btns { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; width:100%; }
+.result-btn {
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(8px,2.5vw,11px);
+  padding:14px 20px;
+  border:none; border-radius:8px;
+  cursor:pointer; touch-action:manipulation;
+  min-height:52px; flex:1; max-width:180px;
+  transition:transform .08s;
+}
+.result-btn:active { transform:scale(.95); }
+.result-btn.replay { background:var(--yellow); color:#1a1a2e; box-shadow:0 4px 0 #8B6914; }
+.result-btn.select { background:var(--blue);   color:#fff;    box-shadow:0 4px 0 #1a3a80; }
+
+/* ===== LANDSCAPE / DESKTOP ===== */
+@media(min-width:640px) and (orientation:landscape){
+  :root { --field-h:55vh; }
+  .skills-grid { grid-template-columns:repeat(4,1fr); }
+  .pokemon-sprite.enemy  { font-size:88px; }
+  .pokemon-sprite.player { font-size:88px; }
+  .battle-ui { flex-direction:row; align-items:stretch; gap:10px; }
+  .message-box { flex:1; margin-bottom:0; }
+  .skills-grid { flex:2; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SELECT ============ -->
+<div id="select-screen" class="screen active">
+  <div class="stars" id="stars"></div>
+  <div class="select-logo"><span class="ico">⚔️</span></div>
+  <div class="select-title">POKEMON BATTLE</div>
+  <div class="select-sub">Chạm để chọn Pokemon!</div>
+  <div class="pokemon-grid" id="pokemon-grid"></div>
+  <button class="start-btn" id="start-btn" disabled>⚔️ BATTLE START!</button>
+</div>
+
+<!-- ============ BATTLE ============ -->
+<div id="battle-screen" class="screen">
+  <div class="battle-field" id="battle-field">
+    <!-- clouds -->
+    <div class="cloud" style="width:70px;height:20px;top:10%;left:-10%;--speed:20s;opacity:.7">
+      <div style="position:absolute;width:34px;height:34px;top:-17px;left:8px;background:rgba(255,255,255,.8);border-radius:50%"></div>
+      <div style="position:absolute;width:24px;height:24px;top:-12px;left:34px;background:rgba(255,255,255,.8);border-radius:50%"></div>
+    </div>
+    <div class="cloud" style="width:50px;height:14px;top:20%;left:-10%;--speed:28s;animation-delay:-10s;opacity:.5">
+      <div style="position:absolute;width:26px;height:26px;top:-13px;left:6px;background:rgba(255,255,255,.8);border-radius:50%"></div>
+    </div>
+    <!-- enemy hp -->
+    <div class="hp-panel enemy">
+      <div class="hp-name"><span id="enemy-name">ENEMY</span><span class="hp-level" id="enemy-level">Lv.30</span></div>
+      <div class="hp-track"><div class="hp-bar" id="enemy-hp-bar"></div></div>
+      <div class="hp-numbers" id="enemy-hp-num">80/80</div>
+    </div>
+    <!-- player hp -->
+    <div class="hp-panel player">
+      <div class="hp-name"><span id="player-name">PLAYER</span><span class="hp-level" id="player-level">Lv.35</span></div>
+      <div class="hp-track"><div class="hp-bar" id="player-hp-bar"></div></div>
+      <div class="hp-numbers" id="player-hp-num">90/90</div>
+    </div>
+    <!-- sprites -->
+    <div class="pokemon-sprite enemy"  id="enemy-sprite">🐉</div>
+    <div class="pokemon-sprite player" id="player-sprite">⚡</div>
+    <!-- flash -->
+    <div class="skill-effect" id="skill-effect"></div>
+    <!-- result -->
+    <div class="result-overlay" id="result-overlay">
+      <div class="result-text" id="result-text">YOU WIN!</div>
+      <div class="result-sub"  id="result-sub">Xuất sắc!</div>
+      <div class="result-btns">
+        <button class="result-btn replay" id="replay-btn">🔄 CHƠI LẠI</button>
+        <button class="result-btn select" id="select-btn">🎮 CHỌN LẠI</button>
+      </div>
+    </div>
+  </div>
+  <!-- ui -->
+  <div class="battle-ui">
+    <div class="message-box">
+      <span id="msg-text">Chọn skill để tấn công!</span>
+      <span class="msg-cursor"></span>
+    </div>
+    <div class="skills-grid" id="skills-grid"></div>
+  </div>
+</div>
+
+<script>
+/* ====== DATA ====== */
+const POKEMON = {
+  pikachu:{name:'PIKACHU',emoji:'⚡',hp:90,level:35,color:'#F8D030',skills:[
+    {name:'Thunderbolt',emoji:'⚡',type:'electric',dmg:[35,55],pp:15,fx:'#FFD700'},
+    {name:'Quick Attack',emoji:'💨',type:'normal', dmg:[20,35],pp:30,fx:'#E0E0E0'},
+    {name:'Thunder',    emoji:'🌩️',type:'electric',dmg:[50,80],pp:10,fx:'#FFD700'},
+    {name:'Iron Tail',  emoji:'🔩',type:'normal', dmg:[25,45],pp:15,fx:'#C0C0C0'},
+  ]},
+  charizard:{name:'CHARIZARD',emoji:'🔥',hp:110,level:36,color:'#F08030',skills:[
+    {name:'Flamethrower',emoji:'🔥',type:'fire',  dmg:[40,65],pp:15,fx:'#FF4500'},
+    {name:'Fly',         emoji:'🦅',type:'normal',dmg:[30,50],pp:15,fx:'#87CEEB'},
+    {name:'Fire Blast',  emoji:'💥',type:'fire',  dmg:[55,85],pp:5, fx:'#FF6600'},
+    {name:'Dragon Claw', emoji:'🐉',type:'dragon',dmg:[35,55],pp:15,fx:'#7038F8'},
+  ]},
+  blastoise:{name:'BLASTOISE',emoji:'💧',hp:105,level:36,color:'#6890F0',skills:[
+    {name:'Hydro Pump',emoji:'💧',type:'water',dmg:[45,75],pp:5, fx:'#1E90FF'},
+    {name:'Surf',      emoji:'🌊',type:'water',dmg:[35,55],pp:15,fx:'#4169E1'},
+    {name:'Ice Beam',  emoji:'🧊',type:'ice',  dmg:[40,60],pp:10,fx:'#98D8D8'},
+    {name:'Rapid Spin',emoji:'🌀',type:'normal',dmg:[20,35],pp:40,fx:'#E0E0E0'},
+  ]},
+  venusaur:{name:'VENUSAUR',emoji:'🌿',hp:100,level:36,color:'#78C850',skills:[
+    {name:'Solar Beam', emoji:'☀️',type:'grass',  dmg:[45,75],pp:10,fx:'#FFD700'},
+    {name:'Vine Whip',  emoji:'🌿',type:'grass',  dmg:[25,40],pp:25,fx:'#78C850'},
+    {name:'Petal Dance',emoji:'🌸',type:'grass',  dmg:[40,70],pp:10,fx:'#FF69B4'},
+    {name:'Sludge Bomb',emoji:'☣️',type:'psychic',dmg:[35,55],pp:10,fx:'#9932CC'},
+  ]},
+};
+const ENEMIES=[
+  {name:'CHARMANDER',emoji:'🦎',hp:80,level:28,skills:[
+    {name:'Ember',      emoji:'🔥',type:'fire',  dmg:[25,40],pp:25,fx:'#FF4500'},
+    {name:'Scratch',    emoji:'🐾',type:'normal',dmg:[15,30],pp:35,fx:'#E0E0E0'},
+    {name:'Flamethrower',emoji:'💥',type:'fire', dmg:[38,58],pp:15,fx:'#FF6600'},
+    {name:'Dragon Rage',emoji:'🐉',type:'dragon',dmg:[30,48],pp:10,fx:'#7038F8'},
+  ]},
+  {name:'SQUIRTLE',emoji:'🐢',hp:85,level:26,skills:[
+    {name:'Water Gun', emoji:'💧',type:'water',dmg:[28,42],pp:25,fx:'#1E90FF'},
+    {name:'Tackle',    emoji:'💥',type:'normal',dmg:[18,32],pp:35,fx:'#E0E0E0'},
+    {name:'Bite',      emoji:'😬',type:'normal',dmg:[30,45],pp:25,fx:'#808080'},
+    {name:'Bubble Beam',emoji:'🫧',type:'water',dmg:[35,52],pp:20,fx:'#4169E1'},
+  ]},
+  {name:'GENGAR',emoji:'👻',hp:95,level:32,skills:[
+    {name:'Shadow Ball',emoji:'👻',type:'psychic',dmg:[40,65],pp:15,fx:'#4B0082'},
+    {name:'Lick',      emoji:'👅',type:'normal', dmg:[15,25],pp:30,fx:'#E0E0E0'},
+    {name:'Hypnosis',  emoji:'😴',type:'psychic',dmg:[25,40],pp:20,fx:'#9932CC'},
+    {name:'Sludge Bomb',emoji:'☣️',type:'psychic',dmg:[38,58],pp:10,fx:'#9932CC'},
+  ]},
+  {name:'GEODUDE',emoji:'🪨',hp:75,level:24,skills:[
+    {name:'Rock Throw',emoji:'🪨',type:'normal',dmg:[30,45],pp:15,fx:'#808080'},
+    {name:'Tackle',    emoji:'💥',type:'normal',dmg:[20,35],pp:35,fx:'#E0E0E0'},
+    {name:'Rollout',   emoji:'⚫',type:'normal',dmg:[22,38],pp:20,fx:'#808080'},
+    {name:'Magnitude', emoji:'🌋',type:'normal',dmg:[28,50],pp:30,fx:'#8B4513'},
+  ]},
+];
+
+/* ====== STATE ====== */
+let S={player:null,enemy:null,pHP:0,eHP:0,pMaxHP:0,eMaxHP:0,pPP:[],turn:'player',chosen:null};
+
+/* ====== UTILS ====== */
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ====== STARS ====== */
+function mkStars(){
+  const c=$('stars');
+  for(let i=0;i<70;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:-${Math.random()*5}s`;
+    c.appendChild(s);
+  }
+}
+
+/* ====== SELECT ====== */
+function buildSelect(){
+  const g=$('pokemon-grid'); g.innerHTML='';
+  Object.entries(POKEMON).forEach(([key,p])=>{
+    const d=document.createElement('div');
+    d.className='pokemon-card';
+    d.style.setProperty('--c',p.color);
+    d.innerHTML=`<span class="card-sprite">${p.emoji}</span><span class="card-name">${p.name}</span><span class="card-type">${p.skills[0].type.toUpperCase()}</span><div class="card-stats">HP ${p.hp} · Lv.${p.level}</div>`;
+    d.addEventListener('click',()=>{
+      document.querySelectorAll('.pokemon-card').forEach(c=>c.classList.remove('selected'));
+      d.classList.add('selected');
+      S.chosen=key;
+      $('start-btn').disabled=false;
+    });
+    g.appendChild(d);
+  });
+}
+$('start-btn').addEventListener('click',()=>{ if(S.chosen) startBattle(); });
+
+/* ====== BATTLE START ====== */
+function startBattle(){
+  const p=POKEMON[S.chosen];
+  const e=ENEMIES[Math.floor(Math.random()*ENEMIES.length)];
+  S.player=p; S.enemy=e;
+  S.pHP=p.hp; S.eHP=e.hp; S.pMaxHP=p.hp; S.eMaxHP=e.hp;
+  S.pPP=p.skills.map(s=>s.pp);
+  S.turn='player';
+  $('player-sprite').textContent=p.emoji;
+  $('enemy-sprite').textContent=e.emoji;
+  $('player-name').textContent=p.name;
+  $('enemy-name').textContent=e.name;
+  $('player-level').textContent=`Lv.${p.level}`;
+  $('enemy-level').textContent=`Lv.${e.level}`;
+  $('player-sprite').className='pokemon-sprite player';
+  $('enemy-sprite').className='pokemon-sprite enemy';
+  $('player-sprite').style.opacity='';
+  $('enemy-sprite').style.opacity='';
+  $('result-overlay').classList.remove('show');
+  updateHP(); buildSkills();
+  msg(`${e.name} xuất hiện!\nChọn skill để tấn công!`);
+  $('select-screen').classList.remove('active');
+  $('battle-screen').classList.add('active');
+}
+
+/* ====== HP ====== */
+function updateHP(){
+  const pP=Math.max(0,S.pHP/S.pMaxHP*100);
+  const eP=Math.max(0,S.eHP/S.eMaxHP*100);
+  const col=p=>p>50?'var(--hp-green)':p>20?'var(--hp-yellow)':'var(--hp-red)';
+  const pb=$('player-hp-bar'),eb=$('enemy-hp-bar');
+  pb.style.width=pP+'%'; pb.style.background=col(pP);
+  eb.style.width=eP+'%'; eb.style.background=col(eP);
+  $('player-hp-num').textContent=`${Math.max(0,S.pHP)}/${S.pMaxHP}`;
+  $('enemy-hp-num').textContent=`${Math.max(0,S.eHP)}/${S.eMaxHP}`;
+}
+
+/* ====== SKILLS ====== */
+function buildSkills(){
+  const g=$('skills-grid'); g.innerHTML='';
+  S.player.skills.forEach((sk,i)=>{
+    const b=document.createElement('button');
+    b.className=`skill-btn type-${sk.type}`;
+    b.id=`sb${i}`;
+    b.innerHTML=`<span class="sn">${sk.emoji} ${sk.name}</span><span class="sp">PP ${S.pPP[i]}/${sk.pp}</span>`;
+    b.addEventListener('click',()=>playerTurn(i));
+    g.appendChild(b);
+  });
+}
+function refreshSkills(){
+  S.player.skills.forEach((_,i)=>{
+    const b=$(`sb${i}`);
+    if(b) b.querySelector('.sp').textContent=`PP ${S.pPP[i]}/${S.player.skills[i].pp}`;
+  });
+}
+function lockSkills(v){
+  S.player.skills.forEach((_,i)=>{
+    const b=$(`sb${i}`);
+    if(b) b.disabled=v||S.pPP[i]<=0;
+  });
+}
+
+/* ====== MSG ====== */
+function msg(t){ $('msg-text').textContent=t; }
+
+/* ====== ANIMATION ====== */
+function animSprite(id,cls,dur){
+  return new Promise(res=>{
+    const el=$(id);
+    const base=id==='enemy-sprite'?'pokemon-sprite enemy':'pokemon-sprite player';
+    el.className=base+' '+cls;
+    setTimeout(()=>{ el.className=base; res(); },dur);
+  });
+}
+function flash(color){
+  const el=$('skill-effect');
+  el.style.background=color; el.classList.remove('flash');
+  void el.offsetWidth; el.classList.add('flash');
+}
+function particles(emoji,x,y,n=5){
+  const f=$('battle-field');
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const a=Math.random()*Math.PI*2, d=40+Math.random()*60;
+    p.style.cssText=`left:${x}%;top:${y}%;--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px;--dur:${.5+Math.random()*.5}s;--delay:${Math.random()*.2}s`;
+    p.textContent=emoji; f.appendChild(p);
+    setTimeout(()=>p.remove(),950);
+  }
+}
+function dmgPopup(dmg,isPlayer){
+  const f=$('battle-field'),p=document.createElement('div');
+  p.className=`damage-popup ${isPlayer?'player-dmg':'enemy-dmg'}`;
+  p.textContent=`-${dmg}`; f.appendChild(p);
+  setTimeout(()=>p.remove(),1300);
+}
+
+/* ====== COMBAT ====== */
+async function playerTurn(idx){
+  if(S.turn!=='player') return;
+  const sk=S.player.skills[idx];
+  if(S.pPP[idx]<=0) return;
+  S.turn='busy'; lockSkills(true);
+  S.pPP[idx]--; refreshSkills();
+  msg(`${S.player.name} dùng ${sk.name}!`);
+  await animSprite('player-sprite','attack',350);
+  flash(sk.fx+'99'); particles(sk.emoji,65,28,6);
+  const dmg=rnd(...sk.dmg);
+  S.eHP=Math.max(0,S.eHP-dmg);
+  dmgPopup(dmg,false);
+  await animSprite('enemy-sprite','shake',400);
+  updateHP(); await wait(550);
+  if(S.eHP<=0){ await animSprite('enemy-sprite','faint',650); await wait(300); endBattle(true); return; }
+  msg(`${S.enemy.name} chuẩn bị phản công...`);
+  await wait(800); await enemyTurn();
+}
+async function enemyTurn(){
+  const sk=S.enemy.skills[Math.floor(Math.random()*S.enemy.skills.length)];
+  msg(`${S.enemy.name} dùng ${sk.name}!`);
+  await animSprite('enemy-sprite','attack',350);
+  flash(sk.fx+'99'); particles(sk.emoji,25,65,6);
+  const dmg=rnd(...sk.dmg);
+  S.pHP=Math.max(0,S.pHP-dmg);
+  dmgPopup(dmg,true);
+  await animSprite('player-sprite','shake',400);
+  updateHP(); await wait(550);
+  if(S.pHP<=0){ await animSprite('player-sprite','faint',650); await wait(300); endBattle(false); return; }
+  msg(`${S.player.name} còn ${S.pHP} HP. Chọn skill!`);
+  S.turn='player'; lockSkills(false);
+}
+
+/* ====== END ====== */
+function endBattle(won){
+  S.turn='busy';
+  const rt=$('result-text'),rs=$('result-sub');
+  if(won){
+    rt.textContent='🏆 YOU WIN!'; rt.className='result-text win';
+    rs.textContent=`${S.player.name} chiến thắng!\nXuất sắc, Trainer!`;
+  } else {
+    rt.textContent='💀 YOU LOSE…'; rt.className='result-text lose';
+    rs.textContent=`${S.player.name} đã ngã xuống…\nHãy thử lại nhé!`;
+  }
+  $('result-overlay').classList.add('show');
+}
+$('replay-btn').addEventListener('click',()=>startBattle());
+$('select-btn').addEventListener('click',()=>{
+  $('battle-screen').classList.remove('active');
+  $('select-screen').classList.add('active');
+  S.chosen=null; $('start-btn').disabled=true;
+  document.querySelectorAll('.pokemon-card').forEach(c=>c.classList.remove('selected'));
+});
+
+/* ====== INIT ====== */
+mkStars(); buildSelect();
+
+// Prevent iOS double-tap zoom
+document.addEventListener('touchend',e=>{
+  if(e.target.closest('button,.pokemon-card')) e.preventDefault();
+},{passive:false});
+</script>
+</body>
+</html>

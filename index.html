@@ -2,982 +2,884 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pokemon Battle ⚔️</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d2b">
+<title>⚔️ Pokemon Battle — 30 Cửa Ải</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-/* ===== RESET & BASE ===== */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --yellow:#FFD700;--red:#E3350D;--blue:#2A75BB;--purple:#7038F8;
+  --hp-green:#48D035;--hp-yellow:#F8D030;--hp-red:#F03030;
+  --panel:#EDE8C8;--border:#8b7355;--dark:#1e1e1e;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+}
+html{height:100%;overflow:hidden;position:fixed;width:100%}
+body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospace;background:#0d0d2b;display:flex;flex-direction:column}
 
-:root {
-  --yellow: #FFD700;
-  --red: #E3350D;
-  --blue: #2A75BB;
-  --green: #3DAE2B;
-  --white: #F8F8F8;
-  --dark: #1a1a2e;
-  --hp-green: #48D035;
-  --hp-yellow: #F8D030;
-  --hp-red: #F03030;
-  --panel-bg: #e8e0c0;
-  --panel-border: #8b7355;
-  --text-dark: #2c2c2c;
-  --shadow: rgba(0,0,0,0.4);
-}
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;width:100%;height:100%;position:absolute;top:0;left:0}
+.screen.active{display:flex}
 
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  font-family: 'Press Start 2P', monospace;
-  background: #1a1a2e;
+/* ════════════════════════════════
+   SELECT SCREEN
+════════════════════════════════ */
+#select-screen{
+  background:linear-gradient(180deg,#0d0d2b 0%,#1a1a4e 50%,#0d0d2b 100%);
+  align-items:center;justify-content:flex-start;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(var(--sat)+16px) 14px calc(var(--sab)+16px);
+  gap:0;
 }
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle var(--d,3s) var(--delay,0s) infinite alternate}
+@keyframes twinkle{0%{opacity:.1}100%{opacity:1}}
 
-/* ===== SCREENS ===== */
-.screen { display: none; width: 100%; height: 100%; position: absolute; top:0; left:0; }
-.screen.active { display: flex; }
+.sel-title{position:relative;z-index:1;font-size:clamp(12px,3.5vw,20px);color:var(--yellow);text-shadow:3px 3px 0 #8B6914,0 0 20px rgba(255,215,0,.5);animation:float 3s ease-in-out infinite;text-align:center;margin:10px 0 4px}
+.sel-sub{position:relative;z-index:1;font-size:clamp(6px,2vw,9px);color:#aaa;text-align:center;margin-bottom:14px}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
-/* ===== SELECT SCREEN ===== */
-#select-screen {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(180deg, #0d0d2b 0%, #1a1a4e 50%, #0d0d2b 100%);
-  position: relative;
-  overflow: hidden;
-}
+/* Stage progress bar */
+.stage-bar{position:relative;z-index:1;width:100%;max-width:480px;margin-bottom:14px}
+.stage-label{font-size:8px;color:var(--yellow);margin-bottom:6px;text-align:center}
+.stage-track{height:12px;background:rgba(255,255,255,.1);border-radius:6px;border:2px solid rgba(255,255,255,.2);overflow:hidden;position:relative}
+.stage-fill{height:100%;background:linear-gradient(90deg,#FFD700,#FF8C00);border-radius:4px;transition:width .5s ease}
+.stage-dots{display:flex;justify-content:space-between;margin-top:4px;flex-wrap:wrap;gap:2px}
+.sdot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.2);font-size:5px;display:flex;align-items:center;justify-content:center;cursor:default}
+.sdot.done{background:var(--yellow);border-color:var(--yellow);color:#000}
+.sdot.current{background:rgba(255,100,0,.6);border-color:#FF8C00;animation:pulse-dot .8s infinite alternate}
+.sdot.locked{background:rgba(255,255,255,.05)}
+@keyframes pulse-dot{0%{box-shadow:0 0 0 0 rgba(255,140,0,.6)}100%{box-shadow:0 0 0 4px rgba(255,140,0,0)}}
 
-#select-screen::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(ellipse at 20% 50%, rgba(255,215,0,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 50%, rgba(42,117,187,0.08) 0%, transparent 60%);
-}
+/* Pokemon grid */
+.poke-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:480px;position:relative;z-index:1}
+@media(min-width:500px){.poke-grid{grid-template-columns:repeat(4,1fr)}}
 
-.stars {
-  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
-}
-.star {
-  position: absolute;
-  width: 2px; height: 2px;
-  background: white;
-  border-radius: 50%;
-  animation: twinkle var(--d, 3s) var(--delay, 0s) infinite alternate;
-}
-@keyframes twinkle { 0%{opacity:0.2} 100%{opacity:1} }
+.poke-card{background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.04));border:2px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 8px 10px;cursor:pointer;text-align:center;transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;overflow:hidden;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:manipulation}
+.poke-card::after{content:'';position:absolute;inset:0;background:var(--c);opacity:0;transition:opacity .2s;border-radius:10px}
+.poke-card.sel::after{opacity:.18}
+.poke-card.sel{border-color:var(--c);box-shadow:0 0 0 3px var(--c)}
+.poke-card:active{transform:scale(.95)}
+.pc-spr{font-size:36px;display:block;margin-bottom:4px;position:relative;z-index:1}
+.pc-name{font-size:7px;color:#fff;display:block;margin-bottom:2px;position:relative;z-index:1;line-height:1.3}
+.pc-type{font-size:6px;color:var(--c);display:block;position:relative;z-index:1}
+.pc-stat{font-size:5px;color:rgba(255,255,255,.45);margin-top:3px;position:relative;z-index:1}
 
-.select-title {
-  font-size: clamp(16px, 3vw, 28px);
-  color: var(--yellow);
-  text-shadow: 3px 3px 0 #8B6914, 0 0 20px rgba(255,215,0,0.5);
-  margin-bottom: 8px;
-  letter-spacing: 2px;
-  animation: float 3s ease-in-out infinite;
-  position: relative; z-index: 1;
-}
-.select-subtitle {
-  font-size: clamp(8px, 1.5vw, 12px);
-  color: #aaa;
-  margin-bottom: 40px;
-  position: relative; z-index: 1;
-}
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.start-btn{position:relative;z-index:1;margin-top:16px;width:100%;max-width:280px;padding:14px;font-family:'Press Start 2P',monospace;font-size:clamp(9px,2.5vw,12px);background:var(--yellow);color:#1a1a2e;border:none;border-radius:8px;cursor:pointer;box-shadow:0 5px 0 #8B6914;touch-action:manipulation;min-height:50px;animation:pulse-btn 2s infinite}
+.start-btn:disabled{opacity:.3;animation:none}
+.start-btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #8B6914}
+@keyframes pulse-btn{0%,100%{box-shadow:0 5px 0 #8B6914,0 0 14px rgba(255,215,0,.25)}50%{box-shadow:0 5px 0 #8B6914,0 0 28px rgba(255,215,0,.5)}}
 
-.pokemon-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  max-width: 600px;
-  width: 90%;
-  position: relative; z-index: 1;
-}
+/* ════════════════════════════════
+   BATTLE SCREEN
+════════════════════════════════ */
+#battle-screen{background:#000}
 
-.pokemon-card {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-  border: 2px solid rgba(255,255,255,0.15);
-  border-radius: 12px;
-  padding: 20px 16px;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
-.pokemon-card::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: var(--color);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.pokemon-card:hover::before, .pokemon-card.selected::before { opacity: 0.15; }
-.pokemon-card:hover { transform: translateY(-4px) scale(1.02); border-color: var(--color); box-shadow: 0 8px 24px var(--color-shadow); }
-.pokemon-card.selected { border-color: var(--color); box-shadow: 0 0 0 3px var(--color), 0 8px 24px var(--color-shadow); }
+.battle-field{position:relative;overflow:hidden;flex-shrink:0;height:52vh;background:linear-gradient(180deg,#5ab0e8 0%,#87CEEB 44%,#7BC67A 44%,#7BC67A 62%,#5a8f50 62%,#5a8f50 100%)}
+.battle-field::before{content:'';position:absolute;bottom:38%;left:3%;width:42%;height:16%;background:radial-gradient(ellipse,rgba(0,0,0,.15) 0%,transparent 70%);border-radius:50%}
+.battle-field::after{content:'';position:absolute;bottom:50%;right:3%;width:36%;height:14%;background:radial-gradient(ellipse,rgba(0,0,0,.15) 0%,transparent 70%);border-radius:50%}
 
-.card-sprite {
-  font-size: 52px;
-  display: block;
-  margin-bottom: 8px;
-  position: relative; z-index: 1;
-  filter: drop-shadow(0 4px 8px var(--color-shadow));
-  transition: transform 0.2s;
-}
-.pokemon-card:hover .card-sprite { transform: scale(1.1) rotate(-5deg); }
+/* stage badge on field */
+.stage-badge{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);border:2px solid var(--yellow);border-radius:20px;padding:3px 10px;font-size:7px;color:var(--yellow);z-index:20;white-space:nowrap}
 
-.card-name {
-  font-size: 10px;
-  color: white;
-  display: block;
-  margin-bottom: 4px;
-  position: relative; z-index: 1;
-}
-.card-type {
-  font-size: 8px;
-  color: var(--color);
-  display: block;
-  position: relative; z-index: 1;
-}
-.card-stats {
-  margin-top: 8px;
-  font-size: 7px;
-  color: rgba(255,255,255,0.6);
-  position: relative; z-index: 1;
-}
+.cloud{position:absolute;background:rgba(255,255,255,.8);border-radius:50px;animation:drift var(--sp) linear infinite}
+@keyframes drift{from{transform:translateX(-120%)}to{transform:translateX(110vw)}}
 
-.start-btn {
-  margin-top: 30px;
-  padding: 14px 32px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 13px;
-  background: var(--yellow);
-  color: #1a1a2e;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative; z-index: 1;
-  box-shadow: 0 4px 0 #8B6914, 0 0 20px rgba(255,215,0,0.3);
-  transition: all 0.1s;
-  animation: pulse-btn 2s ease-in-out infinite;
-}
-.start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #8B6914, 0 0 30px rgba(255,215,0,0.5); }
-.start-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #8B6914; }
-.start-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
-@keyframes pulse-btn { 0%,100%{box-shadow:0 4px 0 #8B6914, 0 0 20px rgba(255,215,0,0.3)} 50%{box-shadow:0 4px 0 #8B6914, 0 0 40px rgba(255,215,0,0.6)} }
+/* HP panels */
+.hp-panel{position:absolute;background:var(--panel);border:3px solid var(--border);border-radius:8px;padding:7px 10px;box-shadow:3px 3px 0 rgba(0,0,0,.3);z-index:10;min-width:clamp(130px,40vw,210px)}
+.hp-panel.enemy{top:6%;left:4%}
+.hp-panel.player{bottom:36%;right:4%}
+.hp-name{font-size:clamp(6px,2vw,9px);color:var(--dark);display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.hp-lv{font-size:5px;color:#666;margin-left:auto}
+.hp-track{height:8px;background:#555;border-radius:4px;overflow:hidden;border:2px solid #333;margin-bottom:3px}
+.hp-bar{height:100%;border-radius:2px;transition:width .5s,background .5s;background:var(--hp-green)}
+.hp-num{font-size:clamp(5px,1.6vw,7px);color:var(--dark);text-align:right}
 
-/* ===== BATTLE SCREEN ===== */
-#battle-screen {
-  flex-direction: column;
-  background: #000;
-  position: relative;
-}
+/* sprites */
+.poke-spr{position:absolute;font-size:clamp(48px,12vw,86px);line-height:1;user-select:none;filter:drop-shadow(3px 6px 8px rgba(0,0,0,.4));z-index:5}
+.poke-spr.enemy{top:7%;right:5%;transform:scaleX(-1)}
+.poke-spr.player{bottom:33%;left:4%}
 
-/* Battle Field */
-.battle-field {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background: 
-    linear-gradient(180deg, #87CEEB 0%, #87CEEB 55%, #7BC67A 55%, #7BC67A 65%, #5a8f50 65%, #5a8f50 100%);
-  min-height: 0;
-}
+/* animations */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+@keyframes shake-e{0%,100%{transform:scaleX(-1) translateX(0)}20%{transform:scaleX(-1) translateX(-9px)}40%{transform:scaleX(-1) translateX(9px)}60%{transform:scaleX(-1) translateX(-7px)}80%{transform:scaleX(-1) translateX(7px)}}
+@keyframes lunge{0%,100%{transform:translateX(0)}50%{transform:translateX(48px)}}
+@keyframes lunge-e{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateX(-48px)}}
+@keyframes faint{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(48px)}}
+@keyframes faint-e{0%{opacity:1;transform:scaleX(-1) translateY(0)}100%{opacity:0;transform:scaleX(-1) translateY(48px)}}
+.poke-spr.enemy.shake{animation:shake-e .4s}
+.poke-spr.player.shake{animation:shake .4s}
+.poke-spr.player.atk{animation:lunge .35s ease-in-out}
+.poke-spr.enemy.atk{animation:lunge-e .35s ease-in-out}
+.poke-spr.player.faint{animation:faint .6s forwards}
+.poke-spr.enemy.faint{animation:faint-e .6s forwards}
 
-/* Ground platforms */
-.battle-field::before {
-  content: '';
-  position: absolute;
-  bottom: 35%;
-  left: 5%;
-  width: 40%;
-  height: 18%;
-  background: radial-gradient(ellipse, rgba(139,101,8,0.4) 0%, transparent 70%);
-  border-radius: 50%;
-}
-.battle-field::after {
-  content: '';
-  position: absolute;
-  bottom: 50%;
-  right: 5%;
-  width: 35%;
-  height: 16%;
-  background: radial-gradient(ellipse, rgba(139,101,8,0.4) 0%, transparent 70%);
-  border-radius: 50%;
-}
+/* damage */
+.dmg-pop{position:absolute;font-size:clamp(14px,3.5vw,20px);pointer-events:none;z-index:100;animation:popup 1.2s forwards;font-family:'Press Start 2P',monospace}
+.dmg-pop.e{color:#FF3333;text-shadow:2px 2px 0 #800;right:12%;top:20%}
+.dmg-pop.p{color:#FF3333;text-shadow:2px 2px 0 #800;left:12%;bottom:48%}
+@keyframes popup{0%{opacity:1;transform:translateY(0) scale(1.2)}70%{opacity:1;transform:translateY(-32px) scale(1)}100%{opacity:0;transform:translateY(-46px) scale(.8)}}
 
-/* Clouds */
-.cloud {
-  position: absolute;
-  background: rgba(255,255,255,0.8);
-  border-radius: 50px;
-  animation: drift var(--speed) linear infinite;
-}
-.cloud::before, .cloud::after {
-  content: '';
-  position: absolute;
-  background: rgba(255,255,255,0.8);
-  border-radius: 50%;
-}
-@keyframes drift { from{transform:translateX(-150%)} to{transform:translateX(110vw)} }
+/* critical */
+.crit-pop{position:absolute;font-size:clamp(9px,2.5vw,13px);color:#FFD700;text-shadow:1px 1px 0 #8B6914;pointer-events:none;z-index:101;animation:crit-fly 1s forwards;font-family:'Press Start 2P',monospace}
+.crit-pop.e{right:18%;top:30%}
+.crit-pop.p{left:18%;bottom:56%}
+@keyframes crit-fly{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-24px)}}
 
-/* HP Panels */
-.hp-panel {
-  position: absolute;
-  background: var(--panel-bg);
-  border: 3px solid var(--panel-border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
-  min-width: 200px;
-  z-index: 10;
-}
-.hp-panel.enemy { top: 8%; left: 5%; }
-.hp-panel.player { bottom: 38%; right: 5%; }
+/* flash / particle */
+.skill-fx{position:absolute;inset:0;pointer-events:none;z-index:50;opacity:0}
+.skill-fx.flash{animation:flasha .3s}
+@keyframes flasha{0%{opacity:0}30%{opacity:.5}100%{opacity:0}}
+.ptcl{position:absolute;pointer-events:none;z-index:60;font-size:clamp(13px,2.5vw,18px);animation:pfly var(--dur,.7s) var(--dly,0s) forwards}
+@keyframes pfly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.3)}}
 
-.hp-name {
-  font-size: 10px;
-  color: var(--text-dark);
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.hp-level {
-  font-size: 7px;
-  color: #666;
-  margin-left: auto;
-}
-.hp-label {
-  font-size: 8px;
-  color: var(--text-dark);
-  margin-bottom: 3px;
-  display: flex;
-  justify-content: space-between;
-}
-.hp-track {
-  height: 10px;
-  background: #555;
-  border-radius: 5px;
-  overflow: hidden;
-  border: 2px solid #333;
-  margin-bottom: 4px;
-}
-.hp-bar {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease, background 0.5s;
-  background: var(--hp-green);
-}
-.hp-numbers {
-  font-size: 8px;
-  color: var(--text-dark);
-  text-align: right;
-}
+/* ─ battle UI ─ */
+.battle-ui{flex:1;display:flex;flex-direction:column;background:var(--panel);border-top:4px solid var(--border);padding:8px 10px;padding-bottom:calc(8px + var(--sab));min-height:0;overflow:hidden}
+.msg-box{background:#fff;border:3px solid var(--border);border-radius:6px;padding:8px 12px;font-size:clamp(7px,2vw,9px);color:var(--dark);line-height:1.9;min-height:42px;flex-shrink:0;margin-bottom:7px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.msg-cur{display:inline-block;width:6px;height:6px;background:var(--dark);margin-left:3px;animation:blink .7s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
-/* Pokemon sprites */
-.pokemon-sprite {
-  position: absolute;
-  font-size: clamp(60px, 10vw, 100px);
-  line-height: 1;
-  cursor: default;
-  user-select: none;
-  filter: drop-shadow(4px 8px 12px rgba(0,0,0,0.4));
-  transition: transform 0.3s;
-  z-index: 5;
-}
-.pokemon-sprite.enemy {
-  top: 15%;
-  right: 10%;
-  transform: scaleX(-1);
-}
-.pokemon-sprite.player {
-  bottom: 38%;
-  left: 8%;
-}
+.skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;flex:1;min-height:0}
+.sk-btn{font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.6vw,8px);border:3px solid;border-radius:8px;cursor:pointer;background:var(--panel);color:var(--dark);text-align:left;padding:9px 8px;display:flex;flex-direction:column;justify-content:center;touch-action:manipulation;min-height:50px;transition:transform .08s;position:relative;overflow:hidden;-webkit-user-select:none}
+.sk-btn:active:not(:disabled){transform:scale(.95)}
+.sk-btn:disabled{opacity:.38}
+.sk-btn .sn{display:block;margin-bottom:2px}
+.sk-btn .sp{font-size:5px;color:#666}
+.sk-btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.22);opacity:0;transition:opacity .15s}
+.sk-btn:active::after{opacity:1}
+.type-electric{border-color:#F8D030}
+.type-fire{border-color:#F08030}
+.type-water{border-color:#6890F0}
+.type-grass{border-color:#78C850}
+.type-normal{border-color:#A8A878}
+.type-psychic{border-color:#F85888}
+.type-ice{border-color:#98D8D8}
+.type-dragon{border-color:#7038F8}
+.type-ghost{border-color:#705898}
+.type-dark{border-color:#705848}
+.type-steel{border-color:#B8B8D0}
+.type-rock{border-color:#B8A038}
+.type-ground{border-color:#E0C068}
+.type-poison{border-color:#A040A0}
+.type-fighting{border-color:#C03028}
+.type-flying{border-color:#A890F0}
 
-/* Animations */
-@keyframes shake {
-  0%,100%{transform:translateX(0)}
-  20%{transform:translateX(-10px)}
-  40%{transform:translateX(10px)}
-  60%{transform:translateX(-8px)}
-  80%{transform:translateX(8px)}
-}
-@keyframes shake-enemy {
-  0%,100%{transform:scaleX(-1) translateX(0)}
-  20%{transform:scaleX(-1) translateX(-10px)}
-  40%{transform:scaleX(-1) translateX(10px)}
-  60%{transform:scaleX(-1) translateX(-8px)}
-  80%{transform:scaleX(-1) translateX(8px)}
-}
-@keyframes attack-lunge {
-  0%,100%{transform:translateX(0)}
-  50%{transform:translateX(60px)}
-}
-@keyframes attack-lunge-enemy {
-  0%,100%{transform:scaleX(-1) translateX(0)}
-  50%{transform:scaleX(-1) translateX(-60px)}
-}
-@keyframes faint {
-  0%{opacity:1;transform:translateY(0)}
-  100%{opacity:0;transform:translateY(60px)}
-}
-@keyframes faint-enemy {
-  0%{opacity:1;transform:scaleX(-1) translateY(0)}
-  100%{opacity:0;transform:scaleX(-1) translateY(60px)}
-}
+/* ─ result overlay ─ */
+.result-ov{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(6px);padding:24px 18px}
+.result-ov.show{display:flex}
+.res-txt{font-size:clamp(20px,7vw,40px);animation:rpop .5s cubic-bezier(.34,1.56,.64,1);margin-bottom:10px;text-align:center}
+.res-txt.win{color:var(--yellow);text-shadow:4px 4px 0 #8B6914,0 0 36px rgba(255,215,0,.8)}
+.res-txt.lose{color:#E3350D;text-shadow:4px 4px 0 #800,0 0 36px rgba(200,0,0,.8)}
+@keyframes rpop{0%{transform:scale(0) rotate(-10deg)}100%{transform:scale(1) rotate(0)}}
+.res-sub{font-size:clamp(6px,2vw,9px);color:rgba(255,255,255,.7);margin-bottom:22px;text-align:center;line-height:2}
+.res-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%}
+.res-btn{font-family:'Press Start 2P',monospace;font-size:clamp(7px,2vw,10px);padding:12px 16px;border:none;border-radius:8px;cursor:pointer;touch-action:manipulation;min-height:48px;flex:1;max-width:180px;transition:transform .08s}
+.res-btn:active{transform:scale(.95)}
+.res-btn.next{background:var(--yellow);color:#1a1a2e;box-shadow:0 4px 0 #8B6914}
+.res-btn.retry{background:#E3350D;color:#fff;box-shadow:0 4px 0 #800}
+.res-btn.sel{background:var(--blue);color:#fff;box-shadow:0 4px 0 #1a3a80}
 
-.pokemon-sprite.enemy.shake { animation: shake-enemy 0.4s; }
-.pokemon-sprite.player.shake { animation: shake 0.4s; }
-.pokemon-sprite.player.attack { animation: attack-lunge 0.35s ease-in-out; }
-.pokemon-sprite.enemy.attack { animation: attack-lunge-enemy 0.35s ease-in-out; }
-.pokemon-sprite.player.faint { animation: faint 0.6s forwards; }
-.pokemon-sprite.enemy.faint { animation: faint-enemy 0.6s forwards; }
+/* stage clear banner */
+.stage-clear{font-size:clamp(9px,2.5vw,13px);color:#fff;background:rgba(0,0,0,.5);padding:6px 14px;border-radius:20px;margin-bottom:14px;text-align:center;letter-spacing:1px}
 
-/* Damage popup */
-.damage-popup {
-  position: absolute;
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(14px, 3vw, 22px);
-  font-weight: bold;
-  pointer-events: none;
-  z-index: 100;
-  animation: popup 1.2s forwards;
+/* ── STAGE MAP SCREEN ── */
+#map-screen{
+  background:linear-gradient(180deg,#0d0d2b 0%,#1a1a4e 40%,#0d0d2b 100%);
+  align-items:center;justify-content:flex-start;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(var(--sat)+12px) 12px calc(var(--sab)+12px);
 }
-.damage-popup.player-dmg { color: #FF4444; text-shadow: 2px 2px 0 #800; right: 15%; bottom: 52%; }
-.damage-popup.enemy-dmg  { color: #FF4444; text-shadow: 2px 2px 0 #800; left: 15%; top: 25%; }
-@keyframes popup {
-  0%{opacity:1;transform:translateY(0) scale(1.2)}
-  70%{opacity:1;transform:translateY(-40px) scale(1)}
-  100%{opacity:0;transform:translateY(-55px) scale(0.8)}
-}
+.map-title{position:relative;z-index:1;font-size:clamp(10px,3vw,16px);color:var(--yellow);text-shadow:2px 2px 0 #8B6914;text-align:center;margin:8px 0}
+.map-sub{font-size:7px;color:#aaa;text-align:center;margin-bottom:14px;position:relative;z-index:1}
+.map-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:100%;max-width:480px;position:relative;z-index:1}
+.map-cell{border:2px solid rgba(255,255,255,.1);border-radius:8px;padding:6px 4px;text-align:center;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;touch-action:manipulation;position:relative}
+.map-cell.done{background:rgba(255,215,0,.15);border-color:var(--yellow);cursor:default}
+.map-cell.current{background:rgba(255,100,0,.2);border-color:#FF8C00;animation:pulse-cell .8s infinite alternate;cursor:pointer}
+.map-cell.locked{background:rgba(255,255,255,.03);opacity:.5;cursor:not-allowed}
+@keyframes pulse-cell{0%{box-shadow:0 0 0 0 rgba(255,140,0,.4)}100%{box-shadow:0 0 0 6px rgba(255,140,0,0)}}
+.map-cell .mc-num{font-size:6px;color:rgba(255,255,255,.4);margin-bottom:2px}
+.map-cell.done .mc-num{color:var(--yellow)}
+.map-cell.current .mc-num{color:#FF8C00}
+.map-cell .mc-spr{font-size:22px;line-height:1}
+.map-cell .mc-name{font-size:5px;color:rgba(255,255,255,.5);margin-top:2px;line-height:1.2}
+.map-cell.done .mc-name{color:rgba(255,215,0,.7)}
+.mc-check{position:absolute;top:2px;right:4px;font-size:9px}
+.mc-boss{position:absolute;top:2px;left:4px;font-size:8px}
+.map-play-btn{margin-top:14px;position:relative;z-index:1;width:100%;max-width:260px;padding:13px;font-family:'Press Start 2P',monospace;font-size:clamp(8px,2.5vw,11px);background:var(--yellow);color:#1a1a2e;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 0 #8B6914;min-height:48px;touch-action:manipulation;animation:pulse-btn 2s infinite}
+.map-play-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8B6914}
+.map-sel-btn{margin-top:8px;position:relative;z-index:1;width:100%;max-width:260px;padding:10px;font-family:'Press Start 2P',monospace;font-size:clamp(7px,2vw,9px);background:transparent;color:#aaa;border:2px solid rgba(255,255,255,.2);border-radius:8px;cursor:pointer;min-height:40px;touch-action:manipulation}
 
-/* Skill effect overlay */
-.skill-effect {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0;
-}
-.skill-effect.flash {
-  animation: flash-anim 0.3s;
-}
-@keyframes flash-anim {
-  0%{opacity:0} 30%{opacity:0.6} 100%{opacity:0}
-}
+/* ── WIN ALL SCREEN ── */
+#win-screen{background:linear-gradient(180deg,#0d0d2b,#1a1a4e);align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:20px}
+.win-trophy{font-size:72px;animation:float 2s ease-in-out infinite}
+.win-title{font-size:clamp(14px,4vw,24px);color:var(--yellow);text-shadow:3px 3px 0 #8B6914,0 0 30px rgba(255,215,0,.8);text-align:center;line-height:2}
+.win-sub{font-size:8px;color:#aaa;text-align:center;line-height:2}
+.win-restart{padding:14px 28px;font-family:'Press Start 2P',monospace;font-size:10px;background:var(--yellow);color:#1a1a2e;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 0 #8B6914;min-height:48px;touch-action:manipulation}
 
-/* Particle effects */
-.particle {
-  position: absolute;
-  pointer-events: none;
-  z-index: 60;
-  font-size: clamp(16px, 2.5vw, 24px);
-  animation: particle-fly var(--dur, 0.8s) var(--delay,0s) forwards;
+/* landscape */
+@media(min-width:640px) and (orientation:landscape){
+  .battle-field{height:56vh}
+  .poke-spr{font-size:84px}
+  .skills-grid{grid-template-columns:repeat(4,1fr)}
+  .battle-ui{flex-direction:row;gap:8px}
+  .msg-box{flex:1;margin-bottom:0}
+  .skills-grid{flex:2}
 }
-@keyframes particle-fly {
-  0%{opacity:1;transform:translate(0,0) scale(1)}
-  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.3)}
-}
-
-/* ===== BATTLE UI PANEL ===== */
-.battle-ui {
-  background: var(--panel-bg);
-  border-top: 4px solid var(--panel-border);
-  padding: 12px;
-  flex-shrink: 0;
-  min-height: 160px;
-}
-
-.battle-message-box {
-  background: white;
-  border: 3px solid var(--panel-border);
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-size: clamp(9px, 1.5vw, 11px);
-  color: var(--text-dark);
-  min-height: 52px;
-  line-height: 1.8;
-  margin-bottom: 10px;
-  position: relative;
-}
-.battle-message-box .cursor {
-  display: inline-block;
-  width: 8px; height: 8px;
-  background: var(--text-dark);
-  margin-left: 4px;
-  animation: blink 0.7s infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-.skills-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.skill-btn {
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(7px, 1.2vw, 9px);
-  padding: 10px 8px;
-  border: 3px solid;
-  border-radius: 6px;
-  cursor: pointer;
-  background: var(--panel-bg);
-  color: var(--text-dark);
-  text-align: left;
-  transition: all 0.1s;
-  position: relative;
-  overflow: hidden;
-}
-.skill-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 0 var(--btn-shadow);
-}
-.skill-btn:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 1px 0 var(--btn-shadow); }
-.skill-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.skill-btn .skill-name { display: block; margin-bottom: 3px; }
-.skill-btn .skill-pp  { font-size: 6px; color: #666; }
-
-/* Type colors */
-.type-electric { --btn-color:#F8D030; --btn-shadow:#a88c00; border-color:#F8D030; }
-.type-fire     { --btn-color:#F08030; --btn-shadow:#a05000; border-color:#F08030; }
-.type-water    { --btn-color:#6890F0; --btn-shadow:#2040b0; border-color:#6890F0; }
-.type-grass    { --btn-color:#78C850; --btn-shadow:#3a8020; border-color:#78C850; }
-.type-normal   { --btn-color:#A8A878; --btn-shadow:#6a6a40; border-color:#A8A878; }
-.type-psychic  { --btn-color:#F85888; --btn-shadow:#b02050; border-color:#F85888; }
-.type-ice      { --btn-color:#98D8D8; --btn-shadow:#4090a0; border-color:#98D8D8; }
-.type-dragon   { --btn-color:#7038F8; --btn-shadow:#3000b0; border-color:#7038F8; }
-
-/* ===== WIN/LOSE OVERLAY ===== */
-.result-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  backdrop-filter: blur(4px);
-}
-.result-overlay.show { display: flex; }
-
-.result-text {
-  font-size: clamp(24px, 6vw, 48px);
-  animation: result-pop 0.5s cubic-bezier(0.34,1.56,0.64,1);
-  margin-bottom: 20px;
-  text-align: center;
-}
-.result-text.win  { color: var(--yellow); text-shadow: 4px 4px 0 #8B6914, 0 0 40px rgba(255,215,0,0.8); }
-.result-text.lose { color: var(--red);    text-shadow: 4px 4px 0 #800, 0 0 40px rgba(200,0,0,0.8); }
-@keyframes result-pop { 0%{transform:scale(0) rotate(-10deg)} 100%{transform:scale(1) rotate(0)} }
-
-.result-sub {
-  font-size: clamp(8px, 1.5vw, 12px);
-  color: rgba(255,255,255,0.7);
-  margin-bottom: 30px;
-  text-align: center;
-}
-
-.result-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
-.result-btn {
-  font-family: 'Press Start 2P', monospace;
-  font-size: clamp(9px, 1.5vw, 12px);
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.1s;
-  box-shadow: 0 4px 0;
-}
-.result-btn.replay { background: var(--yellow); color: #1a1a2e; box-shadow-color: #8B6914; }
-.result-btn.select { background: var(--blue); color: white; box-shadow-color: #1a3a80; }
-.result-btn:hover { transform: translateY(-2px); }
-.result-btn:active { transform: translateY(2px); }
-
-/* Responsive */
-@media (max-width: 480px) {
-  .hp-panel { min-width: 150px; padding: 8px 10px; }
-  .battle-ui { min-height: 140px; padding: 8px; }
-  .pokemon-sprite { font-size: 56px; }
-  .pokemon-sprite.enemy { top: 10%; right: 5%; }
-  .pokemon-sprite.player { bottom: 36%; left: 3%; }
-}
-
-/* Loading */
-.loading-bar-wrap {
-  width: 200px;
-  height: 12px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-top: 16px;
-  position: relative; z-index: 1;
-}
-.loading-bar {
-  height: 100%;
-  background: var(--yellow);
-  border-radius: 6px;
-  animation: load 1s ease-out forwards;
-}
-@keyframes load { from{width:0} to{width:100%} }
 </style>
 </head>
 <body>
 
-<!-- SELECT SCREEN -->
+<!-- ══ SELECT SCREEN ══ -->
 <div id="select-screen" class="screen active">
   <div class="stars" id="stars"></div>
-  <div class="select-title">⚔️ POKEMON BATTLE</div>
-  <div class="select-subtitle">Chọn Pokemon của bạn!</div>
-  <div class="pokemon-grid" id="pokemon-grid"></div>
-  <button class="start-btn" id="start-btn" disabled>BATTLE START!</button>
+  <div class="sel-title">⚔️ POKEMON BATTLE</div>
+  <div class="sel-sub">Chọn Pokemon đồng hành!</div>
+  <div class="stage-bar" id="sel-stage-bar">
+    <div class="stage-label" id="sel-stage-label">Cửa Ải 1 / 30</div>
+    <div class="stage-track"><div class="stage-fill" id="sel-stage-fill" style="width:0%"></div></div>
+  </div>
+  <div class="poke-grid" id="poke-grid"></div>
+  <button class="start-btn" id="start-btn" disabled>⚔️ BẮT ĐẦU!</button>
+  <button class="start-btn" id="map-btn" style="margin-top:8px;background:#2A75BB;color:#fff;box-shadow:0 5px 0 #1a3a80;animation:none">🗺️ BẢN ĐỒ</button>
 </div>
 
-<!-- BATTLE SCREEN -->
+<!-- ══ MAP SCREEN ══ -->
+<div id="map-screen" class="screen">
+  <div class="stars"></div>
+  <div class="map-title">🗺️ BẢN ĐỒ CỬA ẢI</div>
+  <div class="map-sub" id="map-sub">Chọn cửa để xem chi tiết</div>
+  <div class="map-grid" id="map-grid"></div>
+  <button class="map-play-btn" id="map-play-btn">⚔️ TIẾP TỤC</button>
+  <button class="map-sel-btn" id="map-sel-btn">← Đổi Pokemon</button>
+</div>
+
+<!-- ══ BATTLE SCREEN ══ -->
 <div id="battle-screen" class="screen">
   <div class="battle-field" id="battle-field">
-    <!-- Clouds -->
-    <div class="cloud" style="width:80px;height:24px;top:12%;left:-10%;--speed:18s;opacity:0.7">
-      <div style="width:40px;height:40px;top:-20px;left:10px;background:rgba(255,255,255,0.8);border-radius:50%;position:absolute"></div>
-      <div style="width:28px;height:28px;top:-14px;left:36px;background:rgba(255,255,255,0.8);border-radius:50%;position:absolute"></div>
+    <div class="stage-badge" id="stage-badge">Cửa 1/30</div>
+    <!-- clouds -->
+    <div class="cloud" style="width:70px;height:20px;top:9%;left:-10%;--sp:22s;opacity:.7">
+      <div style="position:absolute;width:32px;height:32px;top:-16px;left:8px;background:rgba(255,255,255,.8);border-radius:50%"></div>
+      <div style="position:absolute;width:22px;height:22px;top:-11px;left:32px;background:rgba(255,255,255,.8);border-radius:50%"></div>
     </div>
-    <div class="cloud" style="width:60px;height:18px;top:22%;left:-10%;--speed:25s;animation-delay:-8s;opacity:0.5">
-      <div style="width:30px;height:30px;top:-15px;left:8px;background:rgba(255,255,255,0.8);border-radius:50%;position:absolute"></div>
+    <div class="cloud" style="width:50px;height:14px;top:20%;left:-10%;--sp:30s;animation-delay:-12s;opacity:.5">
+      <div style="position:absolute;width:24px;height:24px;top:-12px;left:6px;background:rgba(255,255,255,.8);border-radius:50%"></div>
     </div>
-
-    <!-- HP Panels -->
-    <div class="hp-panel enemy" id="enemy-panel">
-      <div class="hp-name">
-        <span id="enemy-name">CHARMANDER</span>
-        <span class="hp-level" id="enemy-level">Lv.30</span>
-      </div>
-      <div class="hp-label"><span>HP</span></div>
-      <div class="hp-track">
-        <div class="hp-bar" id="enemy-hp-bar" style="width:100%"></div>
-      </div>
-      <div class="hp-numbers" id="enemy-hp-numbers">80/80</div>
+    <!-- enemy HP -->
+    <div class="hp-panel enemy">
+      <div class="hp-name"><span id="e-name">ENEMY</span><span class="hp-lv" id="e-lv">Lv.1</span></div>
+      <div class="hp-track"><div class="hp-bar" id="e-hp-bar"></div></div>
+      <div class="hp-num" id="e-hp-num">100/100</div>
     </div>
-
-    <div class="hp-panel player" id="player-panel">
-      <div class="hp-name">
-        <span id="player-name">PIKACHU</span>
-        <span class="hp-level" id="player-level">Lv.30</span>
-      </div>
-      <div class="hp-label"><span>HP</span></div>
-      <div class="hp-track">
-        <div class="hp-bar" id="player-hp-bar" style="width:100%"></div>
-      </div>
-      <div class="hp-numbers" id="player-hp-numbers">80/80</div>
+    <!-- player HP -->
+    <div class="hp-panel player">
+      <div class="hp-name"><span id="p-name">PLAYER</span><span class="hp-lv" id="p-lv">Lv.35</span></div>
+      <div class="hp-track"><div class="hp-bar" id="p-hp-bar"></div></div>
+      <div class="hp-num" id="p-hp-num">90/90</div>
     </div>
-
-    <!-- Pokemon Sprites -->
-    <div class="pokemon-sprite enemy" id="enemy-sprite">🐉</div>
-    <div class="pokemon-sprite player" id="player-sprite">⚡</div>
-
-    <!-- Skill effect flash -->
-    <div class="skill-effect" id="skill-effect"></div>
-
-    <!-- Result overlay -->
-    <div class="result-overlay" id="result-overlay">
-      <div class="result-text" id="result-text">YOU WIN!</div>
-      <div class="result-sub" id="result-sub">Tuyệt vời! Bạn là Trainer giỏi!</div>
-      <div class="result-btns">
-        <button class="result-btn replay" id="replay-btn">🔄 CHƠI LẠI</button>
-        <button class="result-btn select" id="select-again-btn">🎮 CHỌN LẠI</button>
+    <!-- sprites -->
+    <div class="poke-spr enemy" id="e-spr">🐉</div>
+    <div class="poke-spr player" id="p-spr">⚡</div>
+    <!-- fx -->
+    <div class="skill-fx" id="skill-fx"></div>
+    <!-- result -->
+    <div class="result-ov" id="result-ov">
+      <div class="res-txt" id="res-txt">YOU WIN!</div>
+      <div class="stage-clear" id="stage-clear-txt"></div>
+      <div class="res-sub" id="res-sub">Xuất sắc!</div>
+      <div class="res-btns">
+        <button class="res-btn next" id="next-btn">▶ CỬA TIẾP</button>
+        <button class="res-btn retry" id="retry-btn">🔄 THỬ LẠI</button>
+        <button class="res-btn sel" id="back-sel-btn">🎮 CHỌN LẠI</button>
       </div>
     </div>
   </div>
-
-  <!-- Battle UI -->
+  <!-- UI -->
   <div class="battle-ui">
-    <div class="battle-message-box" id="message-box">
-      <span id="message-text">Chọn skill để tấn công!</span>
-      <span class="cursor" id="msg-cursor"></span>
-    </div>
+    <div class="msg-box"><span id="msg-txt">Chọn skill!</span><span class="msg-cur"></span></div>
     <div class="skills-grid" id="skills-grid"></div>
   </div>
 </div>
 
+<!-- ══ WIN ALL SCREEN ══ -->
+<div id="win-screen" class="screen">
+  <div class="win-trophy">🏆</div>
+  <div class="win-title">CHÚC MỪNG!<br>BẠN ĐÃ CHINH PHỤC<br>30 CỬA ẢI!</div>
+  <div class="win-sub">Bạn thực sự là<br>Pokemon Master! 🌟</div>
+  <button class="win-restart" id="win-restart">🔄 CHƠI LẠI TỪ ĐẦU</button>
+</div>
+
 <script>
-// ===== DATA =====
-const POKEMON_DATA = {
-  pikachu: {
-    name: 'PIKACHU', emoji: '⚡', hp: 90, level: 35,
-    color: '#F8D030',
-    skills: [
-      { name: 'Thunderbolt', emoji: '⚡', type: 'electric', damage: [35,55], pp: 15, effect: '#FFD700' },
-      { name: 'Quick Attack', emoji: '💨', type: 'normal', damage: [20,35], pp: 30, effect: '#E0E0E0' },
-      { name: 'Thunder', emoji: '🌩️', type: 'electric', damage: [50,80], pp: 10, effect: '#FFD700' },
-      { name: 'Iron Tail', emoji: '🔩', type: 'normal', damage: [25,45], pp: 15, effect: '#C0C0C0' },
-    ]
-  },
-  charizard: {
-    name: 'CHARIZARD', emoji: '🔥', hp: 110, level: 36,
-    color: '#F08030',
-    skills: [
-      { name: 'Flamethrower', emoji: '🔥', type: 'fire', damage: [40,65], pp: 15, effect: '#FF4500' },
-      { name: 'Fly', emoji: '🦅', type: 'normal', damage: [30,50], pp: 15, effect: '#87CEEB' },
-      { name: 'Fire Blast', emoji: '💥', type: 'fire', damage: [55,85], pp: 5, effect: '#FF6600' },
-      { name: 'Dragon Claw', emoji: '🐉', type: 'dragon', damage: [35,55], pp: 15, effect: '#7038F8' },
-    ]
-  },
-  blastoise: {
-    name: 'BLASTOISE', emoji: '💧', hp: 105, level: 36,
-    color: '#6890F0',
-    skills: [
-      { name: 'Hydro Pump', emoji: '💧', type: 'water', damage: [45,75], pp: 5, effect: '#1E90FF' },
-      { name: 'Surf', emoji: '🌊', type: 'water', damage: [35,55], pp: 15, effect: '#4169E1' },
-      { name: 'Ice Beam', emoji: '🧊', type: 'ice', damage: [40,60], pp: 10, effect: '#98D8D8' },
-      { name: 'Rapid Spin', emoji: '🌀', type: 'normal', damage: [20,35], pp: 40, effect: '#E0E0E0' },
-    ]
-  },
-  venusaur: {
-    name: 'VENUSAUR', emoji: '🌿', hp: 100, level: 36,
-    color: '#78C850',
-    skills: [
-      { name: 'Solar Beam', emoji: '☀️', type: 'grass', damage: [45,75], pp: 10, effect: '#FFD700' },
-      { name: 'Vine Whip', emoji: '🌿', type: 'grass', damage: [25,40], pp: 25, effect: '#78C850' },
-      { name: 'Petal Dance', emoji: '🌸', type: 'grass', damage: [40,70], pp: 10, effect: '#FF69B4' },
-      { name: 'Sludge Bomb', emoji: '☣️', type: 'psychic', damage: [35,55], pp: 10, effect: '#9932CC' },
-    ]
-  }
+/* ══════════════════════════════════════
+   POKEMON DATA — 20 player pokemon
+══════════════════════════════════════ */
+const PLAYER_POKEMON = {
+  pikachu:{name:'PIKACHU',emoji:'⚡',hp:90,level:35,color:'#F8D030',skills:[
+    {name:'Thunderbolt',emoji:'⚡',type:'electric',dmg:[35,55],pp:15,fx:'#FFD700'},
+    {name:'Quick Attack',emoji:'💨',type:'normal',dmg:[20,35],pp:30,fx:'#E0E0E0'},
+    {name:'Thunder',emoji:'🌩️',type:'electric',dmg:[50,80],pp:10,fx:'#FFD700'},
+    {name:'Iron Tail',emoji:'🔩',type:'normal',dmg:[25,45],pp:15,fx:'#C0C0C0'},
+  ]},
+  charizard:{name:'CHARIZARD',emoji:'🔥',hp:110,level:36,color:'#F08030',skills:[
+    {name:'Flamethrower',emoji:'🔥',type:'fire',dmg:[40,65],pp:15,fx:'#FF4500'},
+    {name:'Fly',emoji:'🦅',type:'flying',dmg:[30,50],pp:15,fx:'#87CEEB'},
+    {name:'Fire Blast',emoji:'💥',type:'fire',dmg:[55,85],pp:5,fx:'#FF6600'},
+    {name:'Dragon Claw',emoji:'🐉',type:'dragon',dmg:[35,55],pp:15,fx:'#7038F8'},
+  ]},
+  blastoise:{name:'BLASTOISE',emoji:'💧',hp:105,level:36,color:'#6890F0',skills:[
+    {name:'Hydro Pump',emoji:'💧',type:'water',dmg:[45,75],pp:5,fx:'#1E90FF'},
+    {name:'Surf',emoji:'🌊',type:'water',dmg:[35,55],pp:15,fx:'#4169E1'},
+    {name:'Ice Beam',emoji:'🧊',type:'ice',dmg:[40,60],pp:10,fx:'#98D8D8'},
+    {name:'Rapid Spin',emoji:'🌀',type:'normal',dmg:[20,35],pp:40,fx:'#E0E0E0'},
+  ]},
+  venusaur:{name:'VENUSAUR',emoji:'🌿',hp:100,level:36,color:'#78C850',skills:[
+    {name:'Solar Beam',emoji:'☀️',type:'grass',dmg:[45,75],pp:10,fx:'#FFD700'},
+    {name:'Vine Whip',emoji:'🌿',type:'grass',dmg:[25,40],pp:25,fx:'#78C850'},
+    {name:'Petal Dance',emoji:'🌸',type:'grass',dmg:[40,70],pp:10,fx:'#FF69B4'},
+    {name:'Sludge Bomb',emoji:'☣️',type:'poison',dmg:[35,55],pp:10,fx:'#9932CC'},
+  ]},
+  gengar:{name:'GENGAR',emoji:'👻',hp:95,level:36,color:'#705898',skills:[
+    {name:'Shadow Ball',emoji:'👻',type:'ghost',dmg:[40,65],pp:15,fx:'#4B0082'},
+    {name:'Dream Eater',emoji:'😴',type:'psychic',dmg:[45,70],pp:15,fx:'#9932CC'},
+    {name:'Dark Pulse',emoji:'🌑',type:'dark',dmg:[38,58],pp:15,fx:'#705848'},
+    {name:'Sludge Wave',emoji:'☣️',type:'poison',dmg:[35,52],pp:10,fx:'#A040A0'},
+  ]},
+  mewtwo:{name:'MEWTWO',emoji:'🧬',hp:130,level:70,color:'#F85888',skills:[
+    {name:'Psystrike',emoji:'🔮',type:'psychic',dmg:[65,100],pp:10,fx:'#F85888'},
+    {name:'Aura Sphere',emoji:'💠',type:'fighting',dmg:[55,80],pp:20,fx:'#C03028'},
+    {name:'Ice Beam',emoji:'🧊',type:'ice',dmg:[50,75],pp:10,fx:'#98D8D8'},
+    {name:'Thunderbolt',emoji:'⚡',type:'electric',dmg:[50,70],pp:15,fx:'#F8D030'},
+  ]},
+  lucario:{name:'LUCARIO',emoji:'🔵',hp:102,level:45,color:'#4169E1',skills:[
+    {name:'Aura Sphere',emoji:'💠',type:'fighting',dmg:[45,70],pp:20,fx:'#4169E1'},
+    {name:'Close Combat',emoji:'👊',type:'fighting',dmg:[50,80],pp:5,fx:'#C03028'},
+    {name:'Flash Cannon',emoji:'✨',type:'steel',dmg:[40,60],pp:10,fx:'#B8B8D0'},
+    {name:'Extreme Speed',emoji:'💨',type:'normal',dmg:[35,50],pp:5,fx:'#E0E0E0'},
+  ]},
+  dragonite:{name:'DRAGONITE',emoji:'🐲',hp:120,level:55,color:'#6B4226',skills:[
+    {name:'Dragon Rush',emoji:'🐉',type:'dragon',dmg:[50,80],pp:10,fx:'#7038F8'},
+    {name:'Thunder',emoji:'🌩️',type:'electric',dmg:[45,75],pp:10,fx:'#F8D030'},
+    {name:'Hyper Beam',emoji:'💥',type:'normal',dmg:[60,90],pp:5,fx:'#E0E0E0'},
+    {name:'Fire Blast',emoji:'🔥',type:'fire',dmg:[45,70],pp:5,fx:'#FF4500'},
+  ]},
+  umbreon:{name:'UMBREON',emoji:'🌑',hp:108,level:40,color:'#705848',skills:[
+    {name:'Dark Pulse',emoji:'🌑',type:'dark',dmg:[38,60],pp:15,fx:'#705848'},
+    {name:'Moonblast',emoji:'🌙',type:'psychic',dmg:[45,70],pp:15,fx:'#F85888'},
+    {name:'Shadow Ball',emoji:'👻',type:'ghost',dmg:[40,60],pp:15,fx:'#4B0082'},
+    {name:'Foul Play',emoji:'😈',type:'dark',dmg:[30,55],pp:15,fx:'#705848'},
+  ]},
+  gardevoir:{name:'GARDEVOIR',emoji:'🤍',hp:100,level:42,color:'#F85888',skills:[
+    {name:'Moonblast',emoji:'🌙',type:'psychic',dmg:[50,78],pp:15,fx:'#F85888'},
+    {name:'Psychic',emoji:'🔮',type:'psychic',dmg:[40,65],pp:10,fx:'#9932CC'},
+    {name:'Shadow Ball',emoji:'👻',type:'ghost',dmg:[38,58],pp:15,fx:'#4B0082'},
+    {name:'Focus Blast',emoji:'💥',type:'fighting',dmg:[45,75],pp:5,fx:'#C03028'},
+  ]},
+  tyranitar:{name:'TYRANITAR',emoji:'🦖',hp:125,level:55,color:'#705848',skills:[
+    {name:'Stone Edge',emoji:'🪨',type:'rock',dmg:[50,80],pp:5,fx:'#B8A038'},
+    {name:'Crunch',emoji:'😬',type:'dark',dmg:[40,65],pp:15,fx:'#705848'},
+    {name:'Earthquake',emoji:'🌋',type:'ground',dmg:[55,85],pp:10,fx:'#E0C068'},
+    {name:'Ice Punch',emoji:'🧊',type:'ice',dmg:[38,58],pp:15,fx:'#98D8D8'},
+  ]},
+  blaziken:{name:'BLAZIKEN',emoji:'🐓',hp:108,level:48,color:'#F08030',skills:[
+    {name:'Blaze Kick',emoji:'🔥',type:'fire',dmg:[45,75],pp:10,fx:'#FF4500'},
+    {name:'High Jump Kick',emoji:'🦵',type:'fighting',dmg:[50,80],pp:10,fx:'#C03028'},
+    {name:'Sky Uppercut',emoji:'✊',type:'fighting',dmg:[40,65],pp:15,fx:'#C03028'},
+    {name:'Flamethrower',emoji:'💥',type:'fire',dmg:[38,62],pp:15,fx:'#FF6600'},
+  ]},
+  absol:{name:'ABSOL',emoji:'🌪️',hp:95,level:40,color:'#705848',skills:[
+    {name:'Night Slash',emoji:'🌑',type:'dark',dmg:[40,65],pp:20,fx:'#705848'},
+    {name:'Psycho Cut',emoji:'🔮',type:'psychic',dmg:[38,60],pp:20,fx:'#F85888'},
+    {name:'Sucker Punch',emoji:'👊',type:'dark',dmg:[35,55],pp:5,fx:'#705848'},
+    {name:'Perish Song',emoji:'🎵',type:'normal',dmg:[30,50],pp:5,fx:'#E0E0E0'},
+  ]},
+  togekiss:{name:'TOGEKISS',emoji:'🕊️',hp:105,level:45,color:'#A890F0',skills:[
+    {name:'Air Slash',emoji:'🌪️',type:'flying',dmg:[40,65],pp:15,fx:'#A890F0'},
+    {name:'Aura Sphere',emoji:'💠',type:'fighting',dmg:[45,68],pp:20,fx:'#4169E1'},
+    {name:'Moonblast',emoji:'🌙',type:'psychic',dmg:[48,72],pp:15,fx:'#F85888'},
+    {name:'Flamethrower',emoji:'🔥',type:'fire',dmg:[35,55],pp:15,fx:'#FF4500'},
+  ]},
+  glaceon:{name:'GLACEON',emoji:'❄️',hp:98,level:40,color:'#98D8D8',skills:[
+    {name:'Ice Beam',emoji:'🧊',type:'ice',dmg:[40,65],pp:10,fx:'#98D8D8'},
+    {name:'Blizzard',emoji:'❄️',type:'ice',dmg:[55,85],pp:5,fx:'#ADD8E6'},
+    {name:'Shadow Ball',emoji:'👻',type:'ghost',dmg:[35,55],pp:15,fx:'#4B0082'},
+    {name:'Quick Attack',emoji:'💨',type:'normal',dmg:[20,35],pp:30,fx:'#E0E0E0'},
+  ]},
+  machamp:{name:'MACHAMP',emoji:'💪',hp:112,level:45,color:'#C03028',skills:[
+    {name:'Dynamic Punch',emoji:'💥',type:'fighting',dmg:[50,80],pp:5,fx:'#C03028'},
+    {name:'Close Combat',emoji:'👊',type:'fighting',dmg:[55,85],pp:5,fx:'#C03028'},
+    {name:'Stone Edge',emoji:'🪨',type:'rock',dmg:[45,72],pp:5,fx:'#B8A038'},
+    {name:'Thunder Punch',emoji:'⚡',type:'electric',dmg:[35,55],pp:15,fx:'#F8D030'},
+  ]},
+  raichu:{name:'RAICHU',emoji:'🌟',hp:92,level:36,color:'#F8D030',skills:[
+    {name:'Thunderbolt',emoji:'⚡',type:'electric',dmg:[38,58],pp:15,fx:'#F8D030'},
+    {name:'Volt Tackle',emoji:'💥',type:'electric',dmg:[52,80],pp:15,fx:'#FFD700'},
+    {name:'Thunder Wave',emoji:'🌩️',type:'electric',dmg:[28,45],pp:20,fx:'#F8D030'},
+    {name:'Iron Tail',emoji:'🔩',type:'steel',dmg:[30,50],pp:15,fx:'#B8B8D0'},
+  ]},
+  espeon:{name:'ESPEON',emoji:'🔮',hp:96,level:40,color:'#F85888',skills:[
+    {name:'Psychic',emoji:'🔮',type:'psychic',dmg:[42,68],pp:10,fx:'#9932CC'},
+    {name:'Shadow Ball',emoji:'👻',type:'ghost',dmg:[38,58],pp:15,fx:'#4B0082'},
+    {name:'Dazzling Gleam',emoji:'✨',type:'psychic',dmg:[45,70],pp:10,fx:'#FFD700'},
+    {name:'Quick Attack',emoji:'💨',type:'normal',dmg:[22,38],pp:30,fx:'#E0E0E0'},
+  ]},
+  snorlax:{name:'SNORLAX',emoji:'😴',hp:160,level:50,color:'#78C850',skills:[
+    {name:'Body Slam',emoji:'💥',type:'normal',dmg:[42,68],pp:15,fx:'#E0E0E0'},
+    {name:'Hyper Beam',emoji:'💫',type:'normal',dmg:[60,90],pp:5,fx:'#FFD700'},
+    {name:'Earthquake',emoji:'🌋',type:'ground',dmg:[50,75],pp:10,fx:'#E0C068'},
+    {name:'Ice Punch',emoji:'🧊',type:'ice',dmg:[35,55],pp:15,fx:'#98D8D8'},
+  ]},
+  scyther:{name:'SCYTHER',emoji:'🗡️',hp:98,level:38,color:'#78C850',skills:[
+    {name:'X-Scissor',emoji:'✂️',type:'grass',dmg:[40,65],pp:15,fx:'#78C850'},
+    {name:'Aerial Ace',emoji:'🌪️',type:'flying',dmg:[36,55],pp:20,fx:'#A890F0'},
+    {name:'Night Slash',emoji:'🌑',type:'dark',dmg:[38,58],pp:20,fx:'#705848'},
+    {name:'Quick Attack',emoji:'💨',type:'normal',dmg:[22,38],pp:30,fx:'#E0E0E0'},
+  ]},
 };
 
-const ENEMY_POOL = [
-  { name: 'CHARMANDER', emoji: '🦎', hp: 80, level: 30,
-    skills: [
-      { name: 'Ember', emoji: '🔥', type: 'fire', damage: [25,40], pp: 25, effect: '#FF4500' },
-      { name: 'Scratch', emoji: '🐾', type: 'normal', damage: [15,30], pp: 35, effect: '#E0E0E0' },
-      { name: 'Flamethrower', emoji: '💥', type: 'fire', damage: [38,58], pp: 15, effect: '#FF6600' },
-      { name: 'Dragon Rage', emoji: '🐉', type: 'dragon', damage: [30,48], pp: 10, effect: '#7038F8' },
-    ]
-  },
-  { name: 'SQUIRTLE', emoji: '🐢', hp: 85, level: 28,
-    skills: [
-      { name: 'Water Gun', emoji: '💧', type: 'water', damage: [28,42], pp: 25, effect: '#1E90FF' },
-      { name: 'Tackle', emoji: '💥', type: 'normal', damage: [18,32], pp: 35, effect: '#E0E0E0' },
-      { name: 'Bite', emoji: '😬', type: 'normal', damage: [30,45], pp: 25, effect: '#808080' },
-      { name: 'Bubble Beam', emoji: '🫧', type: 'water', damage: [35,52], pp: 20, effect: '#4169E1' },
-    ]
-  },
-  { name: 'GENGAR', emoji: '👻', hp: 95, level: 34,
-    skills: [
-      { name: 'Shadow Ball', emoji: '👻', type: 'psychic', damage: [40,65], pp: 15, effect: '#4B0082' },
-      { name: 'Lick', emoji: '👅', type: 'normal', damage: [15,25], pp: 30, effect: '#E0E0E0' },
-      { name: 'Hypnosis', emoji: '😴', type: 'psychic', damage: [25,40], pp: 20, effect: '#9932CC' },
-      { name: 'Sludge Bomb', emoji: '☣️', type: 'psychic', damage: [38,58], pp: 10, effect: '#9932CC' },
-    ]
-  },
-  { name: 'GEODUDE', emoji: '🪨', hp: 75, level: 25,
-    skills: [
-      { name: 'Rock Throw', emoji: '🪨', type: 'normal', damage: [30,45], pp: 15, effect: '#808080' },
-      { name: 'Tackle', emoji: '💥', type: 'normal', damage: [20,35], pp: 35, effect: '#E0E0E0' },
-      { name: 'Rollout', emoji: '⚫', type: 'normal', damage: [22,38], pp: 20, effect: '#808080' },
-      { name: 'Magnitude', emoji: '🌋', type: 'normal', damage: [28,50], pp: 30, effect: '#8B4513' },
-    ]
-  },
+/* ══════════════════════════════════════
+   30 STAGES — scaled difficulty
+══════════════════════════════════════ */
+const ALL_ENEMIES = [
+  // Stage 1–5: Starter/Rookie
+  {name:'RATTATA',emoji:'🐭',hp:40,level:5},
+  {name:'PIDGEY',emoji:'🐦',hp:42,level:6},
+  {name:'CATERPIE',emoji:'🐛',hp:38,level:4},
+  {name:'WEEDLE',emoji:'🐝',hp:36,level:5},
+  {name:'GEODUDE',emoji:'🪨',hp:45,level:7},
+  // Stage 6–10: Early trainers
+  {name:'CHARMANDER',emoji:'🦎',hp:55,level:12},
+  {name:'SQUIRTLE',emoji:'🐢',hp:58,level:12},
+  {name:'BULBASAUR',emoji:'🌱',hp:56,level:12},
+  {name:'JIGGLYPUFF',emoji:'🎵',hp:65,level:14},
+  {name:'CLEFAIRY',emoji:'⭐',hp:62,level:13},
+  // Stage 11–15: Mid-tier
+  {name:'HAUNTER',emoji:'😱',hp:75,level:22},
+  {name:'KADABRA',emoji:'🥄',hp:72,level:22},
+  {name:'CHARMELEON',emoji:'🔥',hp:78,level:24},
+  {name:'WARTORTLE',emoji:'💧',hp:76,level:23},
+  {name:'IVYSAUR',emoji:'🌿',hp:80,level:25},
+  // Stage 16–20: Strong trainers
+  {name:'ELECTABUZZ',emoji:'⚡',hp:90,level:32},
+  {name:'MAGMAR',emoji:'🔥',hp:88,level:31},
+  {name:'LAPRAS',emoji:'🐋',hp:100,level:35},
+  {name:'ARCANINE',emoji:'🐕',hp:95,level:34},
+  {name:'ALAKAZAM',emoji:'🔮',hp:85,level:33},
+  // Stage 21–25: Elite
+  {name:'SALAMENCE',emoji:'🐉',hp:108,level:48},
+  {name:'METAGROSS',emoji:'🤖',hp:110,level:50},
+  {name:'GARCHOMP',emoji:'🦈',hp:112,level:52},
+  {name:'TOGEKISS',emoji:'🕊️',hp:105,level:48},
+  {name:'LUCARIO',emoji:'🔵',hp:102,level:48},
+  // Stage 26–30: Legendary BOSS
+  {name:'ARTICUNO',emoji:'🦅',hp:115,level:60},
+  {name:'ZAPDOS',emoji:'⚡',hp:118,level:62},
+  {name:'MOLTRES',emoji:'🔥',hp:120,level:64},
+  {name:'RAIKOU',emoji:'⚡',hp:125,level:68},
+  {name:'MEWTWO',emoji:'🧬',hp:140,level:75},
 ];
 
-// ===== STATE =====
-let state = {
-  player: null, enemy: null,
-  playerHP: 0, enemyHP: 0,
-  playerMaxHP: 0, enemyMaxHP: 0,
-  playerSkillPP: [],
-  turn: 'player', // 'player' | 'enemy' | 'busy'
-  selectedPokemon: null,
+// Enemy skill pools by tier
+const SKILL_POOLS = {
+  tier1:[
+    {name:'Tackle',emoji:'💥',type:'normal',dmg:[12,22],pp:35,fx:'#E0E0E0'},
+    {name:'Growl',emoji:'😮',type:'normal',dmg:[8,16],pp:40,fx:'#E0E0E0'},
+    {name:'Scratch',emoji:'🐾',type:'normal',dmg:[14,24],pp:35,fx:'#E0E0E0'},
+    {name:'Pound',emoji:'👊',type:'normal',dmg:[10,20],pp:35,fx:'#E0E0E0'},
+  ],
+  tier2:[
+    {name:'Ember',emoji:'🔥',type:'fire',dmg:[24,38],pp:25,fx:'#FF4500'},
+    {name:'Water Gun',emoji:'💧',type:'water',dmg:[26,40],pp:25,fx:'#1E90FF'},
+    {name:'Vine Whip',emoji:'🌿',type:'grass',dmg:[22,35],pp:25,fx:'#78C850'},
+    {name:'Thunder Shock',emoji:'⚡',type:'electric',dmg:[24,38],pp:30,fx:'#F8D030'},
+  ],
+  tier3:[
+    {name:'Flamethrower',emoji:'🔥',type:'fire',dmg:[36,56],pp:15,fx:'#FF6600'},
+    {name:'Surf',emoji:'🌊',type:'water',dmg:[34,52],pp:15,fx:'#4169E1'},
+    {name:'Solar Beam',emoji:'☀️',type:'grass',dmg:[40,62],pp:10,fx:'#FFD700'},
+    {name:'Thunderbolt',emoji:'⚡',type:'electric',dmg:[36,58],pp:15,fx:'#FFD700'},
+    {name:'Shadow Ball',emoji:'👻',type:'ghost',dmg:[36,56],pp:15,fx:'#4B0082'},
+  ],
+  tier4:[
+    {name:'Fire Blast',emoji:'💥',type:'fire',dmg:[52,80],pp:5,fx:'#FF4500'},
+    {name:'Hydro Pump',emoji:'💧',type:'water',dmg:[48,76],pp:5,fx:'#1E90FF'},
+    {name:'Thunder',emoji:'🌩️',type:'electric',dmg:[52,82],pp:10,fx:'#FFD700'},
+    {name:'Blizzard',emoji:'❄️',type:'ice',dmg:[52,80],pp:5,fx:'#98D8D8'},
+    {name:'Earthquake',emoji:'🌋',type:'ground',dmg:[55,85],pp:10,fx:'#E0C068'},
+    {name:'Psychic',emoji:'🔮',type:'psychic',dmg:[48,72],pp:10,fx:'#9932CC'},
+  ],
+  boss:[
+    {name:'Hyper Beam',emoji:'💥',type:'normal',dmg:[65,100],pp:5,fx:'#FFD700'},
+    {name:'Psystrike',emoji:'🔮',type:'psychic',dmg:[65,100],pp:10,fx:'#F85888'},
+    {name:'Origin Pulse',emoji:'🌊',type:'water',dmg:[60,95],pp:5,fx:'#1E90FF'},
+    {name:'Precipice Blades',emoji:'🌋',type:'ground',dmg:[60,95],pp:10,fx:'#E0C068'},
+    {name:'Spacial Rend',emoji:'💫',type:'dragon',dmg:[65,100],pp:5,fx:'#7038F8'},
+  ],
 };
 
-// ===== STARS =====
-function createStars() {
-  const container = document.getElementById('stars');
-  for (let i = 0; i < 80; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:-${Math.random()*4}s;opacity:${0.3+Math.random()*0.7}`;
-    container.appendChild(s);
-  }
+function getEnemySkillPool(stageIdx){
+  if(stageIdx>=25) return SKILL_POOLS.boss;
+  if(stageIdx>=15) return SKILL_POOLS.tier4;
+  if(stageIdx>=10) return SKILL_POOLS.tier3;
+  if(stageIdx>=5)  return SKILL_POOLS.tier2;
+  return SKILL_POOLS.tier1;
+}
+function buildEnemyForStage(idx){
+  const base=ALL_ENEMIES[idx];
+  const pool=getEnemySkillPool(idx);
+  // pick 4 skills
+  const shuffled=[...pool].sort(()=>Math.random()-.5).slice(0,Math.min(4,pool.length));
+  while(shuffled.length<4) shuffled.push(pool[Math.floor(Math.random()*pool.length)]);
+  // scale HP with stage
+  const hpScale=1+idx*0.15;
+  return {...base, hp:Math.round(base.hp*hpScale), maxHP:Math.round(base.hp*hpScale), skills:shuffled};
 }
 
-// ===== SELECT SCREEN =====
-function buildSelectScreen() {
-  const grid = document.getElementById('pokemon-grid');
-  grid.innerHTML = '';
-  Object.entries(POKEMON_DATA).forEach(([key, p]) => {
-    const card = document.createElement('div');
-    card.className = 'pokemon-card';
-    card.style.setProperty('--color', p.color);
-    card.style.setProperty('--color-shadow', p.color + '66');
-    card.innerHTML = `
-      <span class="card-sprite">${p.emoji}</span>
-      <span class="card-name">${p.name}</span>
-      <span class="card-type">${p.skills[0].type.toUpperCase()}</span>
-      <div class="card-stats">HP: ${p.hp} | Lv.${p.level}</div>
-    `;
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.pokemon-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      state.selectedPokemon = key;
-      document.getElementById('start-btn').disabled = false;
-    });
-    grid.appendChild(card);
-  });
+/* ══════════════════════════════════════
+   GAME STATE
+══════════════════════════════════════ */
+let G={
+  currentStage:0,       // 0-indexed (0 = stage 1)
+  clearedStages:[],     // array of cleared stage indices
+  chosenKey:null,       // player pokemon key
+  player:null,enemy:null,
+  pHP:0,eHP:0,pMaxHP:0,eMaxHP:0,
+  pPP:[],turn:'player',
+};
+
+function saveProgress(){try{localStorage.setItem('pkbattle',JSON.stringify({cleared:G.clearedStages,chosen:G.chosenKey}))}catch(e){}}
+function loadProgress(){
+  try{
+    const d=JSON.parse(localStorage.getItem('pkbattle')||'{}');
+    G.clearedStages=d.cleared||[];
+    G.chosenKey=d.chosen||null;
+    G.currentStage=G.clearedStages.length>0?G.clearedStages.length:0;
+  }catch(e){G.clearedStages=[];G.chosenKey=null;G.currentStage=0;}
 }
 
-document.getElementById('start-btn').addEventListener('click', () => {
-  if (!state.selectedPokemon) return;
-  startBattle();
-});
+/* ══════════════════════════════════════
+   UTILS
+══════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active')}
 
-// ===== START BATTLE =====
-function startBattle() {
-  const playerData = POKEMON_DATA[state.selectedPokemon];
-  const enemyData = ENEMY_POOL[Math.floor(Math.random() * ENEMY_POOL.length)];
-
-  state.player = playerData;
-  state.enemy = enemyData;
-  state.playerHP = playerData.hp;
-  state.enemyHP = enemyData.hp;
-  state.playerMaxHP = playerData.hp;
-  state.enemyMaxHP = enemyData.hp;
-  state.playerSkillPP = playerData.skills.map(s => s.pp);
-  state.turn = 'player';
-
-  // Update UI
-  document.getElementById('player-sprite').textContent = playerData.emoji;
-  document.getElementById('enemy-sprite').textContent = enemyData.emoji;
-  document.getElementById('player-name').textContent = playerData.name;
-  document.getElementById('enemy-name').textContent = enemyData.name;
-  document.getElementById('player-level').textContent = `Lv.${playerData.level}`;
-  document.getElementById('enemy-level').textContent = `Lv.${enemyData.level}`;
-
-  updateHPBars();
-  buildSkillButtons();
-  setMessage(`${enemyData.name} xuất hiện! Hãy chọn skill!`);
-
-  // Show battle screen
-  document.getElementById('select-screen').classList.remove('active');
-  document.getElementById('battle-screen').classList.add('active');
-  document.getElementById('result-overlay').classList.remove('show');
-  document.getElementById('player-sprite').style.opacity = '';
-  document.getElementById('enemy-sprite').style.opacity = '';
-  document.getElementById('player-sprite').className = 'pokemon-sprite player';
-  document.getElementById('enemy-sprite').className = 'pokemon-sprite enemy';
-}
-
-// ===== HP BARS =====
-function updateHPBars() {
-  const pPct = Math.max(0, state.playerHP / state.playerMaxHP * 100);
-  const ePct = Math.max(0, state.enemyHP / state.enemyMaxHP * 100);
-
-  const pb = document.getElementById('player-hp-bar');
-  const eb = document.getElementById('enemy-hp-bar');
-
-  pb.style.width = pPct + '%';
-  eb.style.width = ePct + '%';
-
-  const getColor = p => p > 50 ? 'var(--hp-green)' : p > 20 ? 'var(--hp-yellow)' : 'var(--hp-red)';
-  pb.style.background = getColor(pPct);
-  eb.style.background = getColor(ePct);
-
-  document.getElementById('player-hp-numbers').textContent = `${Math.max(0,state.playerHP)}/${state.playerMaxHP}`;
-  document.getElementById('enemy-hp-numbers').textContent = `${Math.max(0,state.enemyHP)}/${state.enemyMaxHP}`;
-}
-
-// ===== SKILL BUTTONS =====
-function buildSkillButtons() {
-  const grid = document.getElementById('skills-grid');
-  grid.innerHTML = '';
-  state.player.skills.forEach((skill, i) => {
-    const btn = document.createElement('button');
-    btn.className = `skill-btn type-${skill.type}`;
-    btn.id = `skill-btn-${i}`;
-    btn.innerHTML = `<span class="skill-name">${skill.emoji} ${skill.name}</span><span class="skill-pp">PP ${state.playerSkillPP[i]}/${skill.pp}</span>`;
-    btn.addEventListener('click', () => playerAttack(i));
-    grid.appendChild(btn);
-  });
-}
-
-function updateSkillButtons() {
-  state.player.skills.forEach((skill, i) => {
-    const btn = document.getElementById(`skill-btn-${i}`);
-    if (btn) {
-      btn.querySelector('.skill-pp').textContent = `PP ${state.playerSkillPP[i]}/${skill.pp}`;
-      btn.disabled = state.turn !== 'player' || state.playerSkillPP[i] <= 0;
+/* ══════════════════════════════════════
+   STARS
+══════════════════════════════════════ */
+function mkStars(){
+  document.querySelectorAll('.stars').forEach(c=>{
+    c.innerHTML='';
+    for(let i=0;i<60;i++){
+      const s=document.createElement('div');
+      s.className='star';
+      s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:-${Math.random()*5}s`;
+      c.appendChild(s);
     }
   });
 }
 
-function setSkillsDisabled(disabled) {
-  state.player.skills.forEach((_, i) => {
-    const btn = document.getElementById(`skill-btn-${i}`);
-    if (btn) btn.disabled = disabled || state.playerSkillPP[i] <= 0;
+/* ══════════════════════════════════════
+   SELECT SCREEN
+══════════════════════════════════════ */
+function buildSelect(){
+  // stage progress
+  const done=G.clearedStages.length;
+  $('sel-stage-label').textContent=`Cửa Ải ${Math.min(done+1,30)} / 30 — Đã qua: ${done}`;
+  $('sel-stage-fill').style.width=(done/30*100)+'%';
+
+  const g=$('poke-grid'); g.innerHTML='';
+  Object.entries(PLAYER_POKEMON).forEach(([key,p])=>{
+    const d=document.createElement('div');
+    d.className='poke-card';
+    d.style.setProperty('--c',p.color);
+    d.innerHTML=`<span class="pc-spr">${p.emoji}</span><span class="pc-name">${p.name}</span><span class="pc-type">${p.skills[0].type.toUpperCase()}</span><div class="pc-stat">HP ${p.hp} · Lv.${p.level}</div>`;
+    if(G.chosenKey===key) d.classList.add('sel');
+    d.addEventListener('click',()=>{
+      document.querySelectorAll('.poke-card').forEach(c=>c.classList.remove('sel'));
+      d.classList.add('sel');
+      G.chosenKey=key;
+      $('start-btn').disabled=false;
+      saveProgress();
+    });
+    g.appendChild(d);
   });
+  $('start-btn').disabled=!G.chosenKey;
 }
 
-// ===== MESSAGE =====
-function setMessage(text) {
-  document.getElementById('message-text').textContent = text;
-  const cursor = document.getElementById('msg-cursor');
-  cursor.style.display = 'inline-block';
-}
-
-// ===== DAMAGE & ANIMATION =====
-function randomBetween(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
-
-function showDamagePopup(damage, isPlayer) {
-  const field = document.getElementById('battle-field');
-  const popup = document.createElement('div');
-  popup.className = `damage-popup ${isPlayer ? 'player-dmg' : 'enemy-dmg'}`;
-  popup.textContent = `-${damage}`;
-  field.appendChild(popup);
-  setTimeout(() => popup.remove(), 1300);
-}
-
-function flashEffect(color) {
-  const el = document.getElementById('skill-effect');
-  el.style.background = color;
-  el.classList.remove('flash');
-  void el.offsetWidth;
-  el.classList.add('flash');
-}
-
-function spawnParticles(emoji, x, y, count = 5) {
-  const field = document.getElementById('battle-field');
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    p.className = 'particle';
-    const angle = (Math.random() * 360) * Math.PI / 180;
-    const dist = 40 + Math.random() * 60;
-    p.style.cssText = `left:${x}%;top:${y}%;--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;--dur:${0.5+Math.random()*0.5}s;--delay:${Math.random()*0.2}s`;
-    p.textContent = emoji;
-    field.appendChild(p);
-    setTimeout(() => p.remove(), 900);
-  }
-}
-
-function animateSprite(id, cls, duration = 400) {
-  return new Promise(res => {
-    const el = document.getElementById(id);
-    const base = id.includes('enemy') ? 'pokemon-sprite enemy' : 'pokemon-sprite player';
-    el.className = base + ' ' + cls;
-    setTimeout(() => { el.className = base; res(); }, duration);
-  });
-}
-
-// ===== PLAYER ATTACK =====
-async function playerAttack(skillIndex) {
-  if (state.turn !== 'player') return;
-  const skill = state.player.skills[skillIndex];
-  if (state.playerSkillPP[skillIndex] <= 0) return;
-
-  state.turn = 'busy';
-  setSkillsDisabled(true);
-  state.playerSkillPP[skillIndex]--;
-  updateSkillButtons();
-
-  setMessage(`${state.player.name} dùng ${skill.name}!`);
-
-  // Player lunge
-  await animateSprite('player-sprite', 'attack', 350);
-  
-  // Flash + particles
-  flashEffect(skill.effect + '88');
-  spawnParticles(skill.emoji, 65, 30, 6);
-  
-  // Enemy shake
-  const dmg = randomBetween(...skill.damage);
-  state.enemyHP = Math.max(0, state.enemyHP - dmg);
-  showDamagePopup(dmg, false);
-  await animateSprite('enemy-sprite', 'shake', 400);
-  updateHPBars();
-
-  await delay(600);
-
-  if (state.enemyHP <= 0) {
-    await animateSprite('enemy-sprite', 'faint', 650);
-    await delay(400);
-    endBattle(true);
-    return;
-  }
-
-  // Enemy turn
-  setMessage(`${state.enemy.name} chuẩn bị phản công...`);
-  await delay(900);
-  await enemyAttack();
-}
-
-// ===== ENEMY ATTACK =====
-async function enemyAttack() {
-  // AI picks random skill
-  const availSkills = state.enemy.skills;
-  const skill = availSkills[Math.floor(Math.random() * availSkills.length)];
-
-  setMessage(`${state.enemy.name} dùng ${skill.name}!`);
-
-  await animateSprite('enemy-sprite', 'attack', 350);
-
-  flashEffect(skill.effect + '88');
-  spawnParticles(skill.emoji, 25, 65, 6);
-
-  const dmg = randomBetween(...skill.damage);
-  state.playerHP = Math.max(0, state.playerHP - dmg);
-  showDamagePopup(dmg, true);
-  await animateSprite('player-sprite', 'shake', 400);
-  updateHPBars();
-
-  await delay(600);
-
-  if (state.playerHP <= 0) {
-    await animateSprite('player-sprite', 'faint', 650);
-    await delay(400);
-    endBattle(false);
-    return;
-  }
-
-  setMessage(`${state.player.name} còn ${state.playerHP} HP. Chọn skill!`);
-  state.turn = 'player';
-  setSkillsDisabled(false);
-}
-
-// ===== END BATTLE =====
-function endBattle(playerWon) {
-  state.turn = 'busy';
-  const overlay = document.getElementById('result-overlay');
-  const text = document.getElementById('result-text');
-  const sub = document.getElementById('result-sub');
-
-  if (playerWon) {
-    text.textContent = '🏆 YOU WIN!';
-    text.className = 'result-text win';
-    sub.textContent = `${state.player.name} chiến thắng! Xuất sắc, Trainer!`;
-  } else {
-    text.textContent = '💀 YOU LOSE...';
-    text.className = 'result-text lose';
-    sub.textContent = `${state.player.name} đã ngã xuống... Hãy thử lại!`;
-  }
-  overlay.classList.add('show');
-}
-
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ===== BUTTONS =====
-document.getElementById('replay-btn').addEventListener('click', () => {
+$('start-btn').addEventListener('click',()=>{
+  if(!G.chosenKey) return;
+  G.currentStage=G.clearedStages.length;
   startBattle();
 });
-document.getElementById('select-again-btn').addEventListener('click', () => {
-  document.getElementById('battle-screen').classList.remove('active');
-  document.getElementById('select-screen').classList.add('active');
-  state.selectedPokemon = null;
-  document.getElementById('start-btn').disabled = true;
-  document.querySelectorAll('.pokemon-card').forEach(c => c.classList.remove('selected'));
+$('map-btn').addEventListener('click',()=>{ buildMap(); showScreen('map-screen'); });
+
+/* ══════════════════════════════════════
+   MAP SCREEN
+══════════════════════════════════════ */
+function buildMap(){
+  const g=$('map-grid'); g.innerHTML='';
+  const done=G.clearedStages.length;
+  for(let i=0;i<30;i++){
+    const cell=document.createElement('div');
+    const isDone=G.clearedStages.includes(i);
+    const isCurrent=i===done;
+    const isLocked=i>done;
+    const isBoss=(i===9||i===19||i===24||i===29);
+    cell.className='map-cell '+(isDone?'done':isCurrent?'current':'locked');
+    const enemy=ALL_ENEMIES[i];
+    cell.innerHTML=`
+      ${isBoss?'<span class="mc-boss">👑</span>':''}
+      ${isDone?'<span class="mc-check">✅</span>':''}
+      <div class="mc-num">${i+1}</div>
+      <div class="mc-spr">${enemy.emoji}</div>
+      <div class="mc-name">${enemy.name}</div>
+    `;
+    if(isCurrent){
+      cell.addEventListener('click',()=>{
+        G.currentStage=i;
+        startBattle();
+        showScreen('battle-screen');
+      });
+    }
+    g.appendChild(cell);
+  }
+  $('map-sub').textContent=`Đã qua ${done}/30 cửa ải`;
+}
+
+$('map-play-btn').addEventListener('click',()=>{
+  if(!G.chosenKey){showScreen('select-screen');return;}
+  G.currentStage=G.clearedStages.length;
+  startBattle();
+  showScreen('battle-screen');
+});
+$('map-sel-btn').addEventListener('click',()=>{ buildSelect(); showScreen('select-screen'); });
+
+/* ══════════════════════════════════════
+   START BATTLE
+══════════════════════════════════════ */
+function startBattle(){
+  const p=PLAYER_POKEMON[G.chosenKey];
+  const eBase=buildEnemyForStage(G.currentStage);
+  G.player=p; G.enemy=eBase;
+  G.pHP=p.hp; G.eHP=eBase.hp;
+  G.pMaxHP=p.hp; G.eMaxHP=eBase.hp;
+  G.pPP=p.skills.map(s=>s.pp);
+  G.turn='player';
+
+  $('p-spr').textContent=p.emoji; $('e-spr').textContent=eBase.emoji;
+  $('p-name').textContent=p.name; $('e-name').textContent=eBase.name;
+  $('p-lv').textContent=`Lv.${p.level}`; $('e-lv').textContent=`Lv.${eBase.level}`;
+  $('p-spr').className='poke-spr player'; $('e-spr').className='poke-spr enemy';
+  $('p-spr').style.opacity=''; $('e-spr').style.opacity='';
+  $('result-ov').classList.remove('show');
+  $('next-btn').style.display='';
+
+  const isBoss=(G.currentStage===9||G.currentStage===19||G.currentStage===24||G.currentStage===29);
+  $('stage-badge').textContent=`${isBoss?'👑 BOSS — ':''}Cửa ${G.currentStage+1}/30`;
+  $('stage-badge').style.borderColor=isBoss?'#FF8C00':'var(--yellow)';
+  $('stage-badge').style.color=isBoss?'#FF8C00':'var(--yellow)';
+
+  updateHP(); buildSkills();
+  msg(`${eBase.name} (Cửa ${G.currentStage+1}) xuất hiện!`);
+  showScreen('battle-screen');
+}
+
+/* ══════════════════════════════════════
+   HP
+══════════════════════════════════════ */
+function updateHP(){
+  const pP=Math.max(0,G.pHP/G.pMaxHP*100);
+  const eP=Math.max(0,G.eHP/G.eMaxHP*100);
+  const col=p=>p>50?'var(--hp-green)':p>20?'var(--hp-yellow)':'var(--hp-red)';
+  const pb=$('p-hp-bar'),eb=$('e-hp-bar');
+  pb.style.width=pP+'%'; pb.style.background=col(pP);
+  eb.style.width=eP+'%'; eb.style.background=col(eP);
+  $('p-hp-num').textContent=`${Math.max(0,G.pHP)}/${G.pMaxHP}`;
+  $('e-hp-num').textContent=`${Math.max(0,G.eHP)}/${G.eMaxHP}`;
+}
+
+/* ══════════════════════════════════════
+   SKILLS
+══════════════════════════════════════ */
+function buildSkills(){
+  const g=$('skills-grid'); g.innerHTML='';
+  G.player.skills.forEach((sk,i)=>{
+    const b=document.createElement('button');
+    b.className=`sk-btn type-${sk.type}`;
+    b.id=`sb${i}`;
+    b.innerHTML=`<span class="sn">${sk.emoji} ${sk.name}</span><span class="sp">PP ${G.pPP[i]}/${sk.pp}</span>`;
+    b.addEventListener('click',()=>playerTurn(i));
+    g.appendChild(b);
+  });
+}
+function refreshSkills(){
+  G.player.skills.forEach((_,i)=>{
+    const b=$(`sb${i}`);
+    if(b) b.querySelector('.sp').textContent=`PP ${G.pPP[i]}/${G.player.skills[i].pp}`;
+  });
+}
+function lockSkills(v){
+  G.player.skills.forEach((_,i)=>{
+    const b=$(`sb${i}`);
+    if(b) b.disabled=v||G.pPP[i]<=0;
+  });
+}
+
+/* ══════════════════════════════════════
+   MESSAGE
+══════════════════════════════════════ */
+function msg(t){$('msg-txt').textContent=t;}
+
+/* ══════════════════════════════════════
+   ANIMATION
+══════════════════════════════════════ */
+function animSpr(id,cls,dur){
+  return new Promise(res=>{
+    const el=$(id);
+    const base=id==='e-spr'?'poke-spr enemy':'poke-spr player';
+    el.className=base+' '+cls;
+    setTimeout(()=>{el.className=base;res();},dur);
+  });
+}
+function flash(color){
+  const el=$('skill-fx');
+  el.style.background=color; el.classList.remove('flash');
+  void el.offsetWidth; el.classList.add('flash');
+}
+function particles(emoji,x,y,n=5){
+  const f=$('battle-field');
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div');
+    p.className='ptcl';
+    const a=Math.random()*Math.PI*2, d=38+Math.random()*55;
+    p.style.cssText=`left:${x}%;top:${y}%;--tx:${Math.cos(a)*d}px;--ty:${Math.sin(a)*d}px;--dur:${.45+Math.random()*.45}s;--dly:${Math.random()*.18}s`;
+    p.textContent=emoji; f.appendChild(p);
+    setTimeout(()=>p.remove(),900);
+  }
+}
+function dmgPop(dmg,isPlayer,crit){
+  const f=$('battle-field'),p=document.createElement('div');
+  p.className=`dmg-pop ${isPlayer?'p':'e'}`;
+  p.textContent=`-${dmg}`; f.appendChild(p);
+  if(crit){
+    const c=document.createElement('div');
+    c.className=`crit-pop ${isPlayer?'p':'e'}`;
+    c.textContent='CRITICAL!'; f.appendChild(c);
+    setTimeout(()=>c.remove(),1100);
+  }
+  setTimeout(()=>p.remove(),1300);
+}
+
+/* ══════════════════════════════════════
+   COMBAT
+══════════════════════════════════════ */
+async function playerTurn(idx){
+  if(G.turn!=='player') return;
+  const sk=G.player.skills[idx];
+  if(G.pPP[idx]<=0) return;
+  G.turn='busy'; lockSkills(true);
+  G.pPP[idx]--; refreshSkills();
+  const isCrit=Math.random()<0.1;
+  msg(`${G.player.name} dùng ${sk.name}!${isCrit?' Critical hit!':''}`);
+  await animSpr('p-spr','atk',340);
+  flash(sk.fx+'99'); particles(sk.emoji,65,26,6);
+  let dmg=rnd(...sk.dmg);
+  if(isCrit) dmg=Math.round(dmg*1.5);
+  G.eHP=Math.max(0,G.eHP-dmg);
+  dmgPop(dmg,false,isCrit);
+  await animSpr('e-spr','shake',400);
+  updateHP(); await wait(520);
+  if(G.eHP<=0){await animSpr('e-spr','faint',650);await wait(280);endBattle(true);return;}
+  msg(`${G.enemy.name} chuẩn bị phản công...`);
+  await wait(750); await enemyTurn();
+}
+
+async function enemyTurn(){
+  const sk=G.enemy.skills[Math.floor(Math.random()*G.enemy.skills.length)];
+  const isCrit=Math.random()<0.08;
+  // Boss stages have higher crit chance
+  const bossStage=(G.currentStage>=25);
+  const finalCrit=bossStage?Math.random()<0.15:isCrit;
+  msg(`${G.enemy.name} dùng ${sk.name}!${finalCrit?' Critical hit!':''}`);
+  await animSpr('e-spr','atk',340);
+  flash(sk.fx+'99'); particles(sk.emoji,25,62,6);
+  let dmg=rnd(...sk.dmg);
+  if(finalCrit) dmg=Math.round(dmg*1.5);
+  G.pHP=Math.max(0,G.pHP-dmg);
+  dmgPop(dmg,true,finalCrit);
+  await animSpr('p-spr','shake',400);
+  updateHP(); await wait(520);
+  if(G.pHP<=0){await animSpr('p-spr','faint',650);await wait(280);endBattle(false);return;}
+  msg(`${G.player.name} còn ${G.pHP} HP. Chọn skill!`);
+  G.turn='player'; lockSkills(false);
+}
+
+/* ══════════════════════════════════════
+   END BATTLE
+══════════════════════════════════════ */
+function endBattle(won){
+  G.turn='busy';
+  const rt=$('res-txt'),rs=$('res-sub');
+  const isBoss=(G.currentStage===9||G.currentStage===19||G.currentStage===24||G.currentStage===29);
+  if(won){
+    // mark cleared
+    if(!G.clearedStages.includes(G.currentStage)){
+      G.clearedStages.push(G.currentStage);
+      saveProgress();
+    }
+    rt.textContent='🏆 YOU WIN!'; rt.className='res-txt win';
+    const stageNum=G.currentStage+1;
+    $('stage-clear-txt').textContent=isBoss?`👑 BOSS CỬA ${stageNum} ĐÃ BẠI!`:`✅ Cửa ${stageNum} hoàn thành!`;
+    rs.textContent=`${G.player.name} chiến thắng!\nĐã qua ${G.clearedStages.length}/30 cửa.`;
+
+    // check if all done
+    if(G.clearedStages.length>=30){
+      $('next-btn').style.display='none';
+      rs.textContent+='\n🌟 BẠN ĐÃ CHINH PHỤC TẤT CẢ!';
+      setTimeout(()=>showScreen('win-screen'),2500);
+    } else {
+      $('next-btn').style.display='';
+    }
+  } else {
+    rt.textContent='💀 YOU LOSE...'; rt.className='res-txt lose';
+    $('stage-clear-txt').textContent='';
+    rs.textContent=`${G.player.name} đã ngã xuống...\nHãy thử lại cửa ${G.currentStage+1}!`;
+  }
+  $('result-ov').classList.add('show');
+}
+
+/* buttons */
+$('next-btn').addEventListener('click',()=>{
+  if(G.currentStage<29){
+    G.currentStage=G.clearedStages.length;
+    startBattle();
+  } else {
+    showScreen('win-screen');
+  }
+});
+$('retry-btn').addEventListener('click',()=>startBattle());
+$('back-sel-btn').addEventListener('click',()=>{buildSelect();showScreen('select-screen');});
+
+/* win screen */
+$('win-restart').addEventListener('click',()=>{
+  G.clearedStages=[]; G.currentStage=0;
+  saveProgress();
+  buildSelect(); showScreen('select-screen');
 });
 
-// ===== INIT =====
-createStars();
-buildSelectScreen();
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+mkStars();
+loadProgress();
+buildSelect();
+
+// iOS no double-tap zoom
+document.addEventListener('touchend',e=>{
+  if(e.target.closest('button,.poke-card,.map-cell')) e.preventDefault();
+},{passive:false});
 </script>
 </body>
 </html>

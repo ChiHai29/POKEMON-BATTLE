@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d0d2b">
 <title>⚔️ Pokemon Battle — 30 Cửa Ải</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -13,13 +14,41 @@
   --yellow:#FFD700;--red:#E3350D;--blue:#2A75BB;--purple:#7038F8;
   --hp-green:#48D035;--hp-yellow:#F8D030;--hp-red:#F03030;
   --panel:#EDE8C8;--border:#8b7355;--dark:#1e1e1e;
-  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+  --sar:env(safe-area-inset-right,0px);
+  /* battle field: shorter on small phones so skill buttons always fit */
+  --field-h: min(52vh, calc(100dvh - 190px));
 }
-html{height:100%;overflow:hidden;position:fixed;width:100%}
-body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospace;background:#0d0d2b;display:flex;flex-direction:column}
+/* lock the whole page from iOS bounce — correct way */
+html{
+  height:100%; width:100%;
+  overflow:hidden;
+  /* do NOT use position:fixed — breaks scroll children */
+}
+body{
+  height:100dvh; /* dvh = "dynamic viewport height", avoids iOS address-bar jump */
+  width:100%;
+  overflow:hidden;
+  font-family:'Press Start 2P',monospace;
+  background:#0d0d2b;
+  display:flex;
+  flex-direction:column;
+  /* push content below notch / status bar */
+  padding-top:var(--sat);
+  padding-left:var(--sal);
+  padding-right:var(--sar);
+}
 
 /* ── SCREENS ── */
-.screen{display:none;flex-direction:column;width:100%;height:100%;position:absolute;top:0;left:0}
+.screen{
+  display:none;flex-direction:column;
+  width:100%;height:100%;
+  position:absolute;top:0;left:0;
+  /* each screen individually manages safe-area padding */
+}
+
 .screen.active{display:flex}
 
 /* ════════════════════════════════
@@ -29,7 +58,8 @@ body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospa
   background:linear-gradient(180deg,#0d0d2b 0%,#1a1a4e 50%,#0d0d2b 100%);
   align-items:center;justify-content:flex-start;
   overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding:calc(var(--sat)+16px) 14px calc(var(--sab)+16px);
+  /* top already covered by body padding-top; bottom needs home-bar gap */
+  padding:16px 14px calc(var(--sab) + 16px);
   gap:0;
 }
 .stars{position:fixed;inset:0;pointer-events:none;z-index:0}
@@ -76,7 +106,7 @@ body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospa
 ════════════════════════════════ */
 #battle-screen{background:#000}
 
-.battle-field{position:relative;overflow:hidden;flex-shrink:0;height:52vh;background:linear-gradient(180deg,#5ab0e8 0%,#87CEEB 44%,#7BC67A 44%,#7BC67A 62%,#5a8f50 62%,#5a8f50 100%)}
+.battle-field{position:relative;overflow:hidden;flex-shrink:0;height:var(--field-h);background:linear-gradient(180deg,#5ab0e8 0%,#87CEEB 44%,#7BC67A 44%,#7BC67A 62%,#5a8f50 62%,#5a8f50 100%)}
 .battle-field::before{content:'';position:absolute;bottom:38%;left:3%;width:42%;height:16%;background:radial-gradient(ellipse,rgba(0,0,0,.15) 0%,transparent 70%);border-radius:50%}
 .battle-field::after{content:'';position:absolute;bottom:50%;right:3%;width:36%;height:14%;background:radial-gradient(ellipse,rgba(0,0,0,.15) 0%,transparent 70%);border-radius:50%}
 
@@ -135,13 +165,25 @@ body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospa
 @keyframes pfly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.3)}}
 
 /* ─ battle UI ─ */
-.battle-ui{flex:1;display:flex;flex-direction:column;background:var(--panel);border-top:4px solid var(--border);padding:8px 10px;padding-bottom:calc(8px + var(--sab));min-height:0;overflow:hidden}
+.battle-ui{
+  flex:1;
+  display:flex;flex-direction:column;
+  background:var(--panel);
+  border-top:4px solid var(--border);
+  padding:8px 10px;
+  /* bottom safe area so home bar doesn't cover skill buttons */
+  padding-bottom:calc(10px + var(--sab));
+  min-height:0;overflow:hidden;
+}
 .msg-box{background:#fff;border:3px solid var(--border);border-radius:6px;padding:8px 12px;font-size:clamp(7px,2vw,9px);color:var(--dark);line-height:1.9;min-height:42px;flex-shrink:0;margin-bottom:7px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 .msg-cur{display:inline-block;width:6px;height:6px;background:var(--dark);margin-left:3px;animation:blink .7s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 .skills-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;flex:1;min-height:0}
-.sk-btn{font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.6vw,8px);border:3px solid;border-radius:8px;cursor:pointer;background:var(--panel);color:var(--dark);text-align:left;padding:9px 8px;display:flex;flex-direction:column;justify-content:center;touch-action:manipulation;min-height:50px;transition:transform .08s;position:relative;overflow:hidden;-webkit-user-select:none}
+.sk-btn{font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.6vw,8px);border:3px solid;border-radius:8px;cursor:pointer;background:var(--panel);color:var(--dark);text-align:left;padding:9px 8px;display:flex;flex-direction:column;justify-content:center;touch-action:manipulation;
+  /* 44px minimum touch target per Apple HIG */
+  min-height:44px;
+  transition:transform .08s;position:relative;overflow:hidden;-webkit-user-select:none}
 .sk-btn:active:not(:disabled){transform:scale(.95)}
 .sk-btn:disabled{opacity:.38}
 .sk-btn .sn{display:block;margin-bottom:2px}
@@ -188,7 +230,7 @@ body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospa
   background:linear-gradient(180deg,#0d0d2b 0%,#1a1a4e 40%,#0d0d2b 100%);
   align-items:center;justify-content:flex-start;
   overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding:calc(var(--sat)+12px) 12px calc(var(--sab)+12px);
+  padding:12px 12px calc(var(--sab) + 12px);
 }
 .map-title{position:relative;z-index:1;font-size:clamp(10px,3vw,16px);color:var(--yellow);text-shadow:2px 2px 0 #8B6914;text-align:center;margin:8px 0}
 .map-sub{font-size:7px;color:#aaa;text-align:center;margin-bottom:14px;position:relative;z-index:1}
@@ -217,14 +259,46 @@ body{height:100%;width:100%;overflow:hidden;font-family:'Press Start 2P',monospa
 .win-sub{font-size:8px;color:#aaa;text-align:center;line-height:2}
 .win-restart{padding:14px 28px;font-family:'Press Start 2P',monospace;font-size:10px;background:var(--yellow);color:#1a1a2e;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 0 #8B6914;min-height:48px;touch-action:manipulation}
 
-/* landscape */
+/* ── Very small phones (iPhone SE, 375px, ~667px tall) ── */
+@media(max-height:680px){
+  :root{
+    /* shrink field so skills are always reachable */
+    --field-h: min(44vh, calc(100dvh - 175px));
+  }
+  .hp-panel{padding:5px 8px}
+  .hp-track{height:6px}
+  .msg-box{min-height:36px;padding:6px 10px;margin-bottom:5px}
+  .skills-grid{gap:4px}
+  .sk-btn{min-height:38px;padding:7px 6px}
+  .stage-badge{font-size:6px;padding:2px 8px}
+}
+
+/* ── Landscape phones ── */
+@media(max-height:500px) and (orientation:landscape){
+  :root{ --field-h: 46vh }
+  .battle-field{height:46vh}
+  .skills-grid{grid-template-columns:repeat(4,1fr)}
+  .battle-ui{flex-direction:row;gap:6px;padding:6px 10px calc(6px + var(--sab))}
+  .msg-box{flex:1;margin-bottom:0;min-height:32px}
+  .skills-grid{flex:2.2}
+  .poke-spr{font-size:clamp(40px,9vw,64px)}
+  .hp-panel{padding:5px 8px}
+}
+
+/* ── Tablets / large phones landscape ── */
 @media(min-width:640px) and (orientation:landscape){
-  .battle-field{height:56vh}
+  :root{ --field-h: 56vh }
   .poke-spr{font-size:84px}
   .skills-grid{grid-template-columns:repeat(4,1fr)}
   .battle-ui{flex-direction:row;gap:8px}
   .msg-box{flex:1;margin-bottom:0}
   .skills-grid{flex:2}
+}
+
+/* ── Tablets portrait ── */
+@media(min-width:600px) and (orientation:portrait){
+  .poke-grid{grid-template-columns:repeat(4,1fr)}
+  .map-grid{grid-template-columns:repeat(6,1fr)}
 }
 </style>
 </head>
@@ -876,9 +950,25 @@ mkStars();
 loadProgress();
 buildSelect();
 
-// iOS no double-tap zoom
+// iOS: prevent double-tap zoom on interactive elements
 document.addEventListener('touchend',e=>{
   if(e.target.closest('button,.poke-card,.map-cell')) e.preventDefault();
+},{passive:false});
+
+// iOS: prevent rubber-band scroll on non-scrollable screens
+document.addEventListener('touchmove',e=>{
+  // Allow scroll only on elements that actually overflow
+  let el=e.target;
+  while(el&&el!==document.body){
+    const style=getComputedStyle(el);
+    const overflow=style.overflow+style.overflowY;
+    if(overflow.includes('scroll')||overflow.includes('auto')){
+      // check if it can actually scroll
+      if(el.scrollHeight>el.clientHeight) return;
+    }
+    el=el.parentElement;
+  }
+  e.preventDefault();
 },{passive:false});
 </script>
 </body>
